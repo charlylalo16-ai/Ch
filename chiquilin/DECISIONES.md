@@ -54,4 +54,4 @@ Son 6 videos con la misma calidad y el mismo método que el showreel. Todo está
 
 ## Tiempo
 
-De las 18:47 a las ~19:10 UTC, unos 25 minutos: análisis de la marca en tu repo, música, motor visual, 2 iteraciones y render de 6 videos.
+De las 18:47 a las 19:21 UTC, unos 35 minutos: análisis de la marca en tu repo, música, motor visual, 2 iteraciones y render de 6 videos (el render se interrumpió una vez por límite de tiempo y se reanudó sin perder lo ya hecho).
