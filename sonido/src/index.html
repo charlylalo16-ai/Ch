@@ -14,7 +14,7 @@ const CX = W / 2, CY = H / 2, FPS = 60;
 const BPM = 96, BEAT = 60 / BPM, BAR = BEAT * 4, STEP = BEAT / 4;
 const C = { NOCHE: '#0b0620', NOCHE2: '#1a0b3d', MORADO: '#3b0f7a', MAG: '#ff2e93', MAGD: '#b0125f', CIAN: '#16d9ff', AZUL: '#0a4f8a',
   AMA: '#ffd31a', CREMA: '#fff6e8', NAR: '#ff6a1a', ORO: '#f2b632', ORO2: '#c98a12', INK: '#0b0620', PLATA: '#c9cfe0', BLANCO: '#ffffff', ROSA: '#ff8cc6' };
-const BRAND = { name1: 'SONIDO', name2: 'Y KARAOKE' };
+const BRAND = { top: 'SONIDO Y KARAOKE', big: 'CHARLY', tag: 'SHOW', full: 'SONIDO Y KARAOKE SHOW CHARLY', phones: ['443 119 4256', '443 171 3766'] };
 const cv = document.getElementById('c'); cv.width = W; cv.height = H; const out = cv.getContext('2d');
 function mk(w = W, h = H) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 const sceneCv = mk(), accCv = mk(), sc = sceneCv.getContext('2d'), acc = accCv.getContext('2d');
@@ -268,10 +268,10 @@ function stamp(c, drawFn, x, y, s, rot = 0, shadow = 'rgba(0,0,0,0.38)') {
 }
 
 // ============================================================ real footage (client clips, pre-extracted JPEG frames @30 fps)
-const CLIPS = [{ dir: '../build/clip1/frames/f_', n: 315, fps: 30 }, { dir: '../build/clip2/frames/f_', n: 750, fps: 30 }, { dir: '../build/clip3/frames/f_', n: 660, fps: 30 }];
+const CLIPS = [{ dir: '../build/clip1/frames/f_', n: 315, fps: 30 }, { dir: '../build/clip2/frames/f_', n: 750, fps: 30 }, { dir: '../build/clip3/frames/f_', n: 660, fps: 30 }, { dir: '../build/clip4/frames/f_', n: 900, fps: 30 }];
 // which clip + start time plays in each event frame; karaoke screen uses the DJ singing into the mic
-const EV_CLIP = [[0, 0.0], [2, 2.0], [0, 5.0], [1, 9.0]];
-const KARA_CLIP = [2, 12.0];
+const EV_CLIP = [[0, 0.0], [2, 2.0], [3, 10.0], [1, 9.0]];
+const KARA_CLIP = [3, 21.0];
 const CACHE = new Map();
 const fidx = (ci, ct) => clamp(Math.round(ct * CLIPS[ci].fps), 0, CLIPS[ci].n - 1);
 async function need(ci, i) {
@@ -373,20 +373,24 @@ function badge(c, x, y, R, t, p) {
   stamp(c, l => mic(l, t), x - R * 0.02, y + R * 0.05, R / 360 * p, 0, 'rgba(0,0,0,0.3)');
 }
 function logoLockup(c, lt, t, o = {}) {
-  const R = V ? 230 : 210;
-  const bx = V ? CX : W * 0.30, by = V ? H * (o.vy ?? 0.33) : H * (o.hy ?? 0.50);
+  const R = V ? 220 : 205;
+  const bx = V ? CX : W * 0.28, by = V ? H * (o.vy ?? 0.30) : H * (o.hy ?? 0.50);
   badge(c, bx, by, R, t, E.outElastic(prog(lt, 0, 0.8)));
-  const size = V ? fit(c, BRAND.name1, 'Fred', W * 0.8, 230, -2) : fit(c, BRAND.name1, 'Fred', W * 0.42, 230, -2);
-  const m = measure(c, BRAND.name1, size, 'Fred', -2);
-  const wx = V ? CX - m.w / 2 : W * 0.50, wy = V ? by + R + size * 1.0 : by + size * 0.18;
+  const size = V ? fit(c, BRAND.big, 'Fred', W * 0.78, 250, -2) : fit(c, BRAND.big, 'Fred', W * 0.44, 250, -2);
+  const m = measure(c, BRAND.big, size, 'Fred', -2);
+  const ns = V ? 62 : 58;
+  const wx = V ? CX - m.w / 2 : W * 0.48;
+  const ny = V ? by + R + 95 : by - size * 0.55;          // neon line
+  const wy = V ? ny + size * 0.95 : by + size * 0.42;      // big name baseline
+  neon(c, BRAND.top, V ? CX : wx + m.w / 2, ny, ns, C.CIAN, { alpha: flicker(lt - 0.15, t) });
   for (let i = 0; i < m.L.length; i++) {
-    const p = E.outBack(prog(lt, 0.1 + i * 0.05, 0.5 + i * 0.05), 2.2); if (p <= 0) continue;
+    const p = E.outBack(prog(lt, 0.25 + i * 0.05, 0.65 + i * 0.05), 2.2); if (p <= 0) continue;
     const g = m.L[i];
     c.save(); c.translate(wx + g.x + g.w / 2, wy - (1 - p) * 90); c.scale(p, p);
     popText(c, g.ch, 0, 0, size, { align: 'center', fill: C.CREMA, dcol: C.MAG, depth: Math.round(size * 0.08) }); c.restore();
   }
-  const ns = size * 0.5, fl = flicker(lt - 0.45, t);
-  neon(c, BRAND.name2, V ? CX : wx + m.w / 2, wy + ns * 1.35, ns, C.CIAN, { alpha: fl });
+  const sp = E.outElastic(prog(lt, 0.7, 1.4));
+  if (sp > 0) { c.save(); c.translate(wx + m.w - size * 0.45, wy + size * 0.2); c.rotate(-0.08 + Math.sin(t * 4) * 0.03); c.scale(sp, sp); pill(c, BRAND.tag, 0, 0, size * 0.2, C.AMA, C.INK, { fam: 'Fred', tr: size * 0.03 }); c.restore(); }
   return { wx, wy, size, ns, bx, by, R, m };
 }
 function flicker(lt, t) { if (lt < 0) return 0; if (lt > 0.4) return 1; return h2(Math.floor(t * 30), 7) > 0.45 ? 1 : 0.15; }
@@ -424,7 +428,7 @@ function sBuild(c, lt, t) {
   lasers(c, t);
   speakersPair(c, t, prog(lt, 0.05, 0.7));
   // neon letters switch on one by one with the accordion run
-  const word = BRAND.name1, size = fit(c, word, 'Fred', W * 0.7, 260, 6), m = measure(c, word, size, 'Fred', 6);
+  const word = BRAND.big, size = fit(c, word, 'Fred', W * 0.7, 260, 6), m = measure(c, word, size, 'Fred', 6);
   for (let i = 0; i < word.length; i++) {
     const st = STEP * (9 + i), a = lt < st ? 0 : (lt - st < 0.12 ? (h2(i, Math.floor(t * 40)) > 0.4 ? 1 : 0.2) : 1);
     neon(c, word[i], CX - m.w / 2 + m.L[i].x + m.L[i].w / 2, CY + size * 0.3, size, C.MAG, { alpha: a });
@@ -437,7 +441,7 @@ function sLogo(c, lt, t) {
   beams(c, t, 1); specks(c, t, CX, H * 0.12, 80);
   discoBall(c, V ? CX : CX, V ? 300 : 150, V ? 95 : 80, t);
   if (V) speakersPair(c, t, 1, H * 0.86, 0.5);
-  logoLockup(c, lt, t);
+  logoLockup(c, lt, t, { vy: 0.335 });
   lasers(c, t);
   const pp = E.outBack(prog(lt, BEAT * 2, BEAT * 2 + 0.3), 2);
   if (pp > 0) { c.save(); c.translate(CX, V ? H * 0.73 : H * 0.84); c.scale(pp, pp); pill(c, 'MÚSICA · KARAOKE · DIVERSIÓN', 0, 0, V ? 34 : 32, C.AMA, C.INK); c.restore(); }
@@ -495,8 +499,8 @@ function sEvent(c, lt, t, seg) {
 }
 function footer(c) {
   c.save(); font(c, 28, 'Fred'); c.fillStyle = 'rgba(255,246,232,0.85)'; c.textBaseline = 'middle';
-  if (V) { c.textAlign = 'center'; c.fillText(`${BRAND.name1} ${BRAND.name2} · ¡AMENIZAMOS TU FIESTA!`, CX, 175); }
-  else { c.textAlign = 'left'; c.fillText(`${BRAND.name1} ${BRAND.name2}`, 80, H - 70); }
+  if (V) { c.textAlign = 'center'; c.fillText(BRAND.full, CX, 175); }
+  else { c.textAlign = 'left'; c.fillText(BRAND.full, 80, H - 70); }
   c.restore();
 }
 function sCualquier(c, lt, t) {
@@ -587,7 +591,7 @@ function sContrata(c, lt, t) {
     c.save(); c.translate(x, y); c.scale(pp, pp); c.rotate(Math.sin(t * 3 + i) * 0.04); pill(c, it, 0, 0, V ? 46 : 48, cols[i], C.INK); c.restore();
   });
   const fp = E.outBack(prog(lt, BEAT * 2.6, BEAT * 2.6 + 0.3), 2);
-  if (fp > 0) { c.save(); c.translate(CX, V ? 1400 : H - 160); c.scale(fp, fp); neon(c, '¡O CUALQUIER EVENTO QUE TENGAS!', 0, 0, V ? 50 : 54, C.CIAN); c.restore(); }
+  if (fp > 0) { c.save(); c.translate(CX, V ? 1390 : H - 150); c.scale(fp, fp); phones(c, 0, 0, V); c.restore(); }
   confettiRain(c, t, 0.5);
 }
 function phoneIcon(c, x, y, s) {
@@ -599,10 +603,20 @@ function phoneIcon(c, x, y, s) {
   for (const sd of [-1, 1]) { c.save(); c.translate(sd * 22, -4); c.rotate(sd * 0.5); rr(c, -9, -6, 18, 22, 6); c.fill(); c.restore(); }
   c.restore();
 }
+function phones(c, x, y, vert, big = false) {
+  const size = vert ? (big ? 70 : 62) : (big ? 64 : 56);
+  const txt = vert ? BRAND.phones : [BRAND.phones.join('   ·   ')];
+  txt.forEach((s2, i) => {
+    const yy = y + i * size * 1.25;
+    const m = measure(c, s2, size, 'Fred', 2);
+    popText(c, s2, x - m.w / 2 + size * 0.55, yy + size * 0.35, size, { fill: C.CREMA, dcol: C.MAG, depth: 5 });
+    phoneIcon(c, x - m.w / 2 - size * 0.25, yy, size / 80);
+  });
+}
 function sFinal(c, lt, t) {
   bg(c, C.NOCHE);
   beams(c, t, 1); specks(c, t, CX, 120, 90);
-  discoBall(c, CX, V ? 260 : 120, V ? 90 : 70, t);
+  if (!V) discoBall(c, CX, 120, 70, t);
   // confetti burst
   const r = mulberry(3);
   for (let i = 0; i < 120; i++) {
@@ -611,16 +625,17 @@ function sFinal(c, lt, t) {
     const al = clamp(1.6 - lt * (0.8 + sp)); if (al <= 0) continue;
     c.save(); c.translate(x, y); c.rotate(sp * 6 + lt * 8); c.globalAlpha = al; c.fillStyle = `rgb(${BEAM_COLS[ci]})`; c.fillRect(-9, -5, 18, 10); c.restore();
   }
-  const Lk = logoLockup(c, lt, t, { vy: 0.30, hy: 0.42 });
+  const Lk = logoLockup(c, lt, t, { vy: 0.20, hy: 0.36 });
   const ip = E.outBack(prog(lt, BEAT * 1.5, BEAT * 1.5 + 0.35), 2);
   if (ip > 0) {
-    c.save(); const cx2 = CX, cy2 = V ? H * 0.72 : H * 0.80; c.translate(cx2, cy2); c.scale(ip, ip);
-    const pw = pill(c, 'INFORMES Y CONTRATACIONES', 34, 0, V ? 34 : 40, C.AMA, C.INK);
-    phoneIcon(c, -pw / 2 - 20, 0, 1.1);
+    c.save(); const cx2 = CX, cy2 = V ? H * 0.625 : H * 0.675; c.translate(cx2, cy2); c.scale(ip, ip);
+    pill(c, 'INFORMES Y CONTRATACIONES', 0, 0, V ? 32 : 34, C.AMA, C.INK);
     c.restore();
+    const np = E.outBack(prog(lt, BEAT * 1.8, BEAT * 1.8 + 0.35), 2);
+    if (np > 0) { c.save(); c.translate(CX, V ? H * 0.685 : H * 0.765); c.scale(np, np); phones(c, 0, 0, V, true); c.restore(); }
   }
   const sp2 = E.outBack(prog(lt, BEAT * 2, BEAT * 2 + 0.3), 2);
-  if (sp2 > 0) { c.save(); c.translate(CX, V ? H * 0.80 : H * 0.91); c.scale(sp2, sp2); neon(c, 'CUMPLEAÑOS · BAUTIZOS · XV AÑOS · BODAS', 0, 0, V ? 36 : 36, C.MAG); c.restore(); }
+  if (sp2 > 0) { c.save(); c.translate(CX, V ? H * 0.795 : H * 0.92); c.scale(sp2, sp2); neon(c, 'CUMPLEAÑOS · BAUTIZOS · XV AÑOS · BODAS', 0, 0, V ? 36 : 36, C.MAG); c.restore(); }
   lasers(c, t);
   const fl = Math.exp(-lt * 10) * 0.85; if (fl > 0.01) { c.fillStyle = `rgba(22,217,255,${fl})`; c.fillRect(-300, -300, W + 600, H + 600); }
 }

@@ -1,4 +1,4 @@
-# Sonido y Karaoke: video promocional (30 s)
+# Sonido y Karaoke Show Charly: video promocional (30 s)
 
 Entregables:
 - `out/sonido_karaoke_9x16.mp4`, 1080×1920 a 60 fps, para TikTok, Reels y Shorts.
@@ -27,7 +27,7 @@ Usé el mismo método que en los videos anteriores: todo está hecho con código
   - bajo cumbiero y acordeón con **eco de sonidero** (*delay* de 3/16);
   - los clásicos **"láser"** de sonidero, que en pantalla se ven como rayos sincronizados.
 - **Identidad de fiesta nocturna:** fondo morado noche con magenta, cian y amarillo neón. Las bocinas laten con el bombo y hay luces robóticas y bola disco con destellos.
-- **Tus 3 videos:**
+- **Tus 4 videos:**
 
   | Escena | Video | Por qué |
   |---|---|---|
@@ -35,7 +35,7 @@ Usé el mismo método que en los videos anteriores: todo está hecho con código
   | Bautizos | WA0018 (carpa con altar y cruces), 2–4,5 s | Es una ceremonia religiosa |
   | XV años | WA0017, 5–7,5 s | Pista con luces y gente bailando |
   | Bodas | WA0019 (DJ con luces robóticas), 9–11,5 s | Lo más vistoso del equipo de luces |
-  | Karaoke (fondo de la pantalla) | WA0018, desde el segundo 12 | Alguien cantando al micrófono |
+  | Karaoke (fondo de la pantalla) | WA0020, desde el segundo 21 | Charly cantando al micrófono |
 
   - **Encuadre:** si el video tiene la misma forma que el marco, lo llena. Si no, va centrado y un poco acercado, con una copia desenfocada atrás que llena el marco, que es la técnica estándar de los editores.
   - **Color:** les subí un poco la saturación y el contraste para que las luces se vean más vivas.
@@ -44,12 +44,14 @@ Usé el mismo método que en los videos anteriores: todo está hecho con código
   - **Videos fuera del repo:** tus videos originales están en `media/` y no se suben al repo; solo se suben los videos terminados.
 - **Zonas seguras en vertical:** los textos importantes quedan arriba de la franja donde TikTok y Reels ponen sus botones.
 
-## Pendiente (me lo tienes que pasar)
+## Datos del cliente
 
-1. **El nombre exacto del sonido.** Por ahora dice "SONIDO / Y KARAOKE". Se cambia en una sola línea (`BRAND`).
-2. **El teléfono o WhatsApp.** El cierre dice "Informes y contrataciones" y hay espacio listo para el número. No inventé ninguno.
-3. **Más videos (opcional):** si tienes de una boda o unos XV en específico, los cambio en `EV_CLIP`.
-4. **Redes sociales y ciudad**, si quieres que salgan.
+- **Nombre:** Sonido y Karaoke Show Charly. En el logo: "SONIDO Y KARAOKE" en neón, "CHARLY" grande y la etiqueta "SHOW".
+- **Teléfonos:** 443 119 4256 y 443 171 3766. Aparecen en "¡Contrátanos!" y en el cierre.
+
+## Opcional
+
+- Redes sociales (Facebook o TikTok) y ciudad, si quieres que salgan en el cierre.
 
 ## Iteraciones
 
@@ -57,6 +59,7 @@ Usé el mismo método que en los videos anteriores: todo está hecho con código
 2. **v2:** repartí a la gente a lo ancho, quité las bocinas del logo en horizontal, bajé la etiqueta y redibujé el teléfono.
 3. **v3, con tu primer video:** ajusté el marco vertical a la proporción del video, porque quedaban franjas desenfocadas a los lados, y moví la etiqueta para que no chocara con la tilde de la Ñ.
 4. **v4, con 3 videos:** cambié la carga de los videos para leer solo los cuadros que se necesitan en cada momento y no saturar la memoria. Repartí los clips por escena, aclaré el fondo del karaoke y acerqué los videos horizontales en el formato vertical.
+5. **v5, con el nombre, los teléfonos y WA0020:** rehice el logo con el nombre real, agregué los dos teléfonos y metí el video de Charly cantando en XV años y en el karaoke. También acomodé la etiqueta "SHOW", que tapaba "KARAOKE", el espacio de los teléfonos y la bola disco, que tocaba el logo en vertical.
 
 ## Rehacerlo
 
