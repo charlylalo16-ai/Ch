@@ -27,25 +27,36 @@ Usé el mismo método que en los videos anteriores: todo está hecho con código
   - bajo cumbiero y acordeón con **eco de sonidero** (*delay* de 3/16);
   - los clásicos **"láser"** de sonidero, que en pantalla se ven como rayos sincronizados.
 - **Identidad de fiesta nocturna:** fondo morado noche con magenta, cian y amarillo neón. Las bocinas laten con el bombo y hay luces robóticas y bola disco con destellos.
-- **Tu video (VID-20261105-WA0017, vertical, 10,5 s):** lo usé en los 4 marcos de eventos, un tramo distinto en cada uno (0–2,5 s, 2,5–5 s, 5–7,5 s y 7,5–10 s), para que no se repita ninguna toma. Le subí un poco la saturación y el contraste para que las luces se vean más vivas.
-  - **En vertical**, el marco tiene la misma proporción que tu video, así que se ve completo y grande.
-  - **En horizontal**, tu video va al centro y detrás una copia desenfocada llena el marco, que es la técnica estándar para poner video vertical en pantalla ancha.
-  - El audio original del clip no se usa; suena la cumbia sonidera, para que todo vaya al ritmo.
-  - Si me mandas más clips, cada evento puede tener su propio video. La pista de baile animada queda como respaldo para cualquier marco sin clip.
+- **Tus 3 videos:**
+
+  | Escena | Video | Por qué |
+  |---|---|---|
+  | Cumpleaños | WA0017 (vertical, pista llena), 0–2,5 s | Ambiente de fiesta con mucha gente |
+  | Bautizos | WA0018 (carpa con altar y cruces), 2–4,5 s | Es una ceremonia religiosa |
+  | XV años | WA0017, 5–7,5 s | Pista con luces y gente bailando |
+  | Bodas | WA0019 (DJ con luces robóticas), 9–11,5 s | Lo más vistoso del equipo de luces |
+  | Karaoke (fondo de la pantalla) | WA0018, desde el segundo 12 | Alguien cantando al micrófono |
+
+  - **Encuadre:** si el video tiene la misma forma que el marco, lo llena. Si no, va centrado y un poco acercado, con una copia desenfocada atrás que llena el marco, que es la técnica estándar de los editores.
+  - **Color:** les subí un poco la saturación y el contraste para que las luces se vean más vivas.
+  - **Audio:** no uso el sonido original de los clips. Suena la cumbia sonidera, para que todo vaya al ritmo.
+  - **Archivo repetido:** WA0018 llegó dos veces (idéntico), así que lo usé una sola vez.
+  - **Videos fuera del repo:** tus videos originales están en `media/` y no se suben al repo; solo se suben los videos terminados.
 - **Zonas seguras en vertical:** los textos importantes quedan arriba de la franja donde TikTok y Reels ponen sus botones.
 
 ## Pendiente (me lo tienes que pasar)
 
 1. **El nombre exacto del sonido.** Por ahora dice "SONIDO / Y KARAOKE". Se cambia en una sola línea (`BRAND`).
 2. **El teléfono o WhatsApp.** El cierre dice "Informes y contrataciones" y hay espacio listo para el número. No inventé ninguno.
-3. **Más videos (opcional)**: con uno por evento (un cumpleaños, un bautizo, unos XV, una boda) queda todavía más fuerte.
+3. **Más videos (opcional):** si tienes de una boda o unos XV en específico, los cambio en `EV_CLIP`.
 4. **Redes sociales y ciudad**, si quieres que salgan.
 
 ## Iteraciones
 
 1. **v1:** la gente de la pista salía amontonada al centro. En horizontal, la bocina derecha tapaba "Y KARAOKE". En vertical, la etiqueta se encimaba con el logo. El ícono del teléfono no se entendía.
 2. **v2:** repartí a la gente a lo ancho, quité las bocinas del logo en horizontal, bajé la etiqueta y redibujé el teléfono.
-3. **v3, con tu video:** detuve el render que iba corriendo para meter tu clip. Ajusté el marco vertical a la proporción del video, porque al principio quedaban franjas desenfocadas a los lados, y moví la etiqueta para que no chocara con la tilde de la Ñ.
+3. **v3, con tu primer video:** ajusté el marco vertical a la proporción del video, porque quedaban franjas desenfocadas a los lados, y moví la etiqueta para que no chocara con la tilde de la Ñ.
+4. **v4, con 3 videos:** cambié la carga de los videos para leer solo los cuadros que se necesitan en cada momento y no saturar la memoria. Repartí los clips por escena, aclaré el fondo del karaoke y acerqué los videos horizontales en el formato vertical.
 
 ## Rehacerlo
 

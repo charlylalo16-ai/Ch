@@ -268,18 +268,28 @@ function stamp(c, drawFn, x, y, s, rot = 0, shadow = 'rgba(0,0,0,0.38)') {
 }
 
 // ============================================================ real footage (client clips, pre-extracted JPEG frames @30 fps)
-const CLIPS = [{ dir: '../build/clip1/frames/f_', n: 315, fps: 30 }];
-const CLIPFR = [];
-async function loadClips() {
-  for (const cl of CLIPS) {
-    const arr = [];
-    await Promise.all(Array.from({ length: cl.n }, (_, i) => new Promise(res => { const im = new Image(); im.onload = im.onerror = () => res(); im.src = cl.dir + String(i + 1).padStart(4, '0') + '.jpg'; arr[i] = im; })));
-    CLIPFR.push(arr.filter(im => im.naturalWidth > 0));
-  }
+const CLIPS = [{ dir: '../build/clip1/frames/f_', n: 315, fps: 30 }, { dir: '../build/clip2/frames/f_', n: 750, fps: 30 }, { dir: '../build/clip3/frames/f_', n: 660, fps: 30 }];
+// which clip + start time plays in each event frame; karaoke screen uses the DJ singing into the mic
+const EV_CLIP = [[0, 0.0], [2, 2.0], [0, 5.0], [1, 9.0]];
+const KARA_CLIP = [2, 12.0];
+const CACHE = new Map();
+const fidx = (ci, ct) => clamp(Math.round(ct * CLIPS[ci].fps), 0, CLIPS[ci].n - 1);
+async function need(ci, i) {
+  const k = ci * 100000 + i; if (CACHE.has(k)) { const v = CACHE.get(k); CACHE.delete(k); CACHE.set(k, v); return; }
+  const im = new Image(); im.src = CLIPS[ci].dir + String(i + 1).padStart(4, '0') + '.jpg';
+  try { await im.decode(); CACHE.set(k, im); } catch (e) { }
+  while (CACHE.size > 80) CACHE.delete(CACHE.keys().next().value);
 }
+function clipReq(ts) { // the clip frame a given instant needs (or null)
+  const b = Math.min(TL.length - 1, Math.floor(ts / BAR + 1e-9)), lt = ts - b * BAR, seg = TL[b];
+  const out = [];
+  const add = (sg, l) => { if (sg[0] === 'event') { const [ci, st] = EV_CLIP[sg[1]]; out.push([ci, st + l]); } else if (sg[0] === 'karaoke') out.push([KARA_CLIP[0], KARA_CLIP[1] + l + sg[1] * BAR]); };
+  add(seg, lt); if (b > 0 && lt < 0.42) add(TL[b - 1], BAR - 1 / FPS);
+  return out;
+}
+async function loadClips() { }
 function footage(c, w, h, clipIdx, ct) {
-  const fr = CLIPFR[clipIdx]; if (!fr || !fr.length) return false;
-  const im = fr[clamp(Math.round(ct * CLIPS[clipIdx].fps), 0, fr.length - 1)];
+  const im = CACHE.get(clipIdx * 100000 + fidx(clipIdx, ct)); if (!im) return false;
   const iw = im.naturalWidth, ih = im.naturalHeight;
   const cover = Math.max(w / iw, h / ih), contain = Math.min(w / iw, h / ih);
   if (contain / cover > 0.8) { // aspect close enough: fill the frame
@@ -289,9 +299,9 @@ function footage(c, w, h, clipIdx, ct) {
     c.filter = 'blur(26px) brightness(0.55) saturate(1.4)';
     const s2 = cover * 1.15; c.drawImage(im, (w - iw * s2) / 2, (h - ih * s2) / 2, iw * s2, ih * s2);
     c.filter = 'saturate(1.2) contrast(1.08) brightness(1.04)';
-    const dw = iw * contain, dh = ih * contain;
+    const z = Math.min(cover, contain * (h > w ? 1.75 : 1.45)), dw = iw * z, dh = ih * z;
     c.drawImage(im, (w - dw) / 2, (h - dh) / 2, dw, dh);
-    c.filter = 'none'; c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillRect((w - dw) / 2 - 3, 0, 3, h); c.fillRect((w + dw) / 2, 0, 3, h);
+    c.filter = 'none'; c.fillStyle = 'rgba(255,255,255,0.85)'; if (dw < w) { c.fillRect((w - dw) / 2 - 3, 0, 3, h); c.fillRect((w + dw) / 2, 0, 3, h); } if (dh < h) { c.fillRect(0, (h - dh) / 2 - 3, w, 3); c.fillRect(0, (h + dh) / 2, w, 3); }
   }
   c.filter = 'none';
   return true;
@@ -467,7 +477,7 @@ function sEvent(c, lt, t, seg) {
   const Ev = EVENTS[seg[1]], L = evLayout();
   bg(c, Ev.bg, 0.07, t, L.ix, L.iy, '#ffffff');
   confettiRain(c, t, 0.35);
-  clipFrame(c, L.fx, L.fy, L.fw, L.fh, t, Ev.tint.join(','), prog(lt, 0.02, 0.5), [0, seg[1] * BAR + lt]);
+  clipFrame(c, L.fx, L.fy, L.fw, L.fh, t, Ev.tint.join(','), prog(lt, 0.02, 0.5), [EV_CLIP[seg[1]][0], EV_CLIP[seg[1]][1] + lt]);
   const ip = E.outElastic(prog(lt, BEAT * 0.5, BEAT * 0.5 + 0.8));
   if (ip > 0) stamp(c, l => ICONS[Ev.icon](l, t), L.ix, L.iy + Math.sin(t * 3) * 8, L.is * ip, Math.sin(t * 2) * 0.06);
   const lp = E.outBack(prog(lt, 0.15, 0.45), 2);
@@ -511,6 +521,11 @@ function sKaraoke(c, lt0, t, seg) {
   const g = c.createLinearGradient(0, -sh / 2, 0, sh / 2); g.addColorStop(0, '#1d1060'); g.addColorStop(1, '#3a0f5e');
   c.fillStyle = g; rr(c, -sw / 2, -sh / 2, sw, sh, 30); c.fill();
   c.save(); rr(c, -sw / 2, -sh / 2, sw, sh, 30); c.clip();
+  frm.setTransform(1, 0, 0, 1, 0, 0); frm.clearRect(0, 0, 1200, 1200);
+  if (footage(frm, Math.min(1200, sw), Math.min(1200, sh), KARA_CLIP[0], KARA_CLIP[1] + lt)) {
+    c.globalAlpha = 0.85; c.drawImage(frmCv, 0, 0, Math.min(1200, sw), Math.min(1200, sh), -sw / 2, -sh / 2, sw, sh); c.globalAlpha = 1;
+    const sh2 = c.createLinearGradient(0, -sh / 2, 0, sh / 2); sh2.addColorStop(0, 'rgba(29,16,96,0.35)'); sh2.addColorStop(0.5, 'rgba(29,16,96,0.55)'); sh2.addColorStop(1, 'rgba(58,15,94,0.7)'); c.fillStyle = sh2; c.fillRect(-sw / 2, -sh / 2, sw, sh);
+  }
   // animated equaliser backdrop
   for (let i = 0; i < 28; i++) { const hh = (0.2 + 0.8 * Math.abs(Math.sin(t * 4 + i * 0.7)) * (0.5 + kickEnv(t, 8))) * sh * 0.35; c.fillStyle = `rgba(${BEAM_COLS[i % 4]},0.25)`; c.fillRect(-sw / 2 + i * sw / 28 + 4, sh / 2 - hh, sw / 28 - 8, hh); }
   c.restore();
@@ -617,8 +632,9 @@ function camera(t) {
   return { x: noise1(t * 22, 1) * a, y: noise1(t * 22, 2) * a, r: noise1(t * 15, 3) * a * 0.0008 };
 }
 function subsFor(t) { const lt = t % BAR; return lt < 0.3 ? 10 : 5; }
-function renderFrame(f) {
+async function renderFrame(f) {
   const t = f / FPS, n = subsFor(t), shutter = 0.5 / FPS;
+  for (let i = 0; i < n; i++) { const ts = Math.min(DUR - 1e-4, Math.max(0, t + (i / (n - 1) - 0.5) * shutter)); for (const [ci, ct] of clipReq(ts)) await need(ci, fidx(ci, ct)); }
   for (let i = 0; i < n; i++) {
     const ts = Math.min(DUR - 1e-4, Math.max(0, t + (i / (n - 1) - 0.5) * shutter));
     const b = Math.min(TL.length - 1, Math.floor(ts / BAR + 1e-9)), lt = ts - b * BAR;
