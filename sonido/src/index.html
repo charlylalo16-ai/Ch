@@ -267,6 +267,36 @@ function stamp(c, drawFn, x, y, s, rot = 0, shadow = 'rgba(0,0,0,0.38)') {
   c.shadowColor = shadow; c.shadowOffsetX = 16 * s; c.shadowOffsetY = 22 * s; c.drawImage(layCv, -700, -700); c.restore();
 }
 
+// ============================================================ real footage (client clips, pre-extracted JPEG frames @30 fps)
+const CLIPS = [{ dir: '../build/clip1/frames/f_', n: 315, fps: 30 }];
+const CLIPFR = [];
+async function loadClips() {
+  for (const cl of CLIPS) {
+    const arr = [];
+    await Promise.all(Array.from({ length: cl.n }, (_, i) => new Promise(res => { const im = new Image(); im.onload = im.onerror = () => res(); im.src = cl.dir + String(i + 1).padStart(4, '0') + '.jpg'; arr[i] = im; })));
+    CLIPFR.push(arr.filter(im => im.naturalWidth > 0));
+  }
+}
+function footage(c, w, h, clipIdx, ct) {
+  const fr = CLIPFR[clipIdx]; if (!fr || !fr.length) return false;
+  const im = fr[clamp(Math.round(ct * CLIPS[clipIdx].fps), 0, fr.length - 1)];
+  const iw = im.naturalWidth, ih = im.naturalHeight;
+  const cover = Math.max(w / iw, h / ih), contain = Math.min(w / iw, h / ih);
+  if (contain / cover > 0.8) { // aspect close enough: fill the frame
+    c.filter = 'saturate(1.2) contrast(1.08) brightness(1.04)';
+    c.drawImage(im, (w - iw * cover) / 2, (h - ih * cover) / 2, iw * cover, ih * cover);
+  } else { // portrait clip in a landscape frame: blurred fill behind, sharp clip in front
+    c.filter = 'blur(26px) brightness(0.55) saturate(1.4)';
+    const s2 = cover * 1.15; c.drawImage(im, (w - iw * s2) / 2, (h - ih * s2) / 2, iw * s2, ih * s2);
+    c.filter = 'saturate(1.2) contrast(1.08) brightness(1.04)';
+    const dw = iw * contain, dh = ih * contain;
+    c.drawImage(im, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    c.filter = 'none'; c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillRect((w - dw) / 2 - 3, 0, 3, h); c.fillRect((w + dw) / 2, 0, 3, h);
+  }
+  c.filter = 'none';
+  return true;
+}
+
 // ============================================================ the party "clip" (placeholder footage until real clips arrive)
 const CROWD = (() => { const r = mulberry(11), P = []; for (let i = 0; i < 26; i++) P.push([r(), r(), r(), r()]); return P; })();
 function party(c, w, h, t, tint) {
@@ -306,10 +336,12 @@ function party(c, w, h, t, tint) {
   });
   lasers(c, t, w, h);
 }
-function clipFrame(c, x, y, w, h, t, tint, enter) {
+function clipFrame(c, x, y, w, h, t, tint, enter, clip = null) {
   // render the footage into its own canvas, then frame it with a neon border
   frm.setTransform(1, 0, 0, 1, 0, 0); const fw = Math.min(1200, Math.round(w)), fh = Math.min(1200, Math.round(h));
-  frm.clearRect(0, 0, 1200, 1200); frm.save(); frm.beginPath(); frm.rect(0, 0, fw, fh); frm.clip(); party(frm, fw, fh, t, tint); frm.restore();
+  frm.clearRect(0, 0, 1200, 1200); frm.save(); frm.beginPath(); frm.rect(0, 0, fw, fh); frm.clip();
+  if (!(clip && footage(frm, fw, fh, clip[0], clip[1]))) party(frm, fw, fh, t, tint);
+  frm.restore();
   c.save(); c.translate(x + w / 2, y + h / 2); const s = lerp(0.6, 1, E.outBack(enter, 1.4)); c.scale(s, s); c.rotate((1 - enter) * 0.15);
   c.fillStyle = 'rgba(0,0,0,0.4)'; rr(c, -w / 2 + 18, -h / 2 + 24, w, h, 34); c.fill();
   c.save(); rr(c, -w / 2, -h / 2, w, h, 34); c.clip(); c.drawImage(frmCv, 0, 0, fw, fh, -w / 2, -h / 2, w, h); c.restore();
@@ -428,14 +460,14 @@ function sAmeni(c, lt, t) {
   if (V) speakersPair(c, t, prog(lt, BEAT * 2, BEAT * 3), H * 0.83, 0.5);
 }
 function evLayout() {
-  if (V) return { fx: 60, fy: 300, fw: 960, fh: 760, ix: CX + 300, iy: 1120, is: 0.5, tx: CX, ty: 1330, al: 'center', maxW: W * 0.86, maxS: 200, lab: 1180, sub: 1480 };
+  if (V) return { fx: 210, fy: 240, fw: 660, fh: 1000, ix: CX + 330, iy: 1180, is: 0.42, tx: CX, ty: 1425, al: 'center', maxW: W * 0.86, maxS: 170, lab: 1272, sub: 1565 };
   return { fx: 80, fy: 220, fw: 1020, fh: 640, ix: 1560, iy: 330, is: 0.55, tx: 1170, ty: 640, al: 'left', maxW: 700, maxS: 190, lab: 520, sub: 790 };
 }
 function sEvent(c, lt, t, seg) {
   const Ev = EVENTS[seg[1]], L = evLayout();
   bg(c, Ev.bg, 0.07, t, L.ix, L.iy, '#ffffff');
   confettiRain(c, t, 0.35);
-  clipFrame(c, L.fx, L.fy, L.fw, L.fh, t, Ev.tint.join(','), prog(lt, 0.02, 0.5));
+  clipFrame(c, L.fx, L.fy, L.fw, L.fh, t, Ev.tint.join(','), prog(lt, 0.02, 0.5), [0, seg[1] * BAR + lt]);
   const ip = E.outElastic(prog(lt, BEAT * 0.5, BEAT * 0.5 + 0.8));
   if (ip > 0) stamp(c, l => ICONS[Ev.icon](l, t), L.ix, L.iy + Math.sin(t * 3) * 8, L.is * ip, Math.sin(t * 2) * 0.06);
   const lp = E.outBack(prog(lt, 0.15, 0.45), 2);
@@ -453,7 +485,7 @@ function sEvent(c, lt, t, seg) {
 }
 function footer(c) {
   c.save(); font(c, 28, 'Fred'); c.fillStyle = 'rgba(255,246,232,0.85)'; c.textBaseline = 'middle';
-  if (V) { c.textAlign = 'center'; c.fillText(`${BRAND.name1} ${BRAND.name2} · ¡AMENIZAMOS TU FIESTA!`, CX, 220); }
+  if (V) { c.textAlign = 'center'; c.fillText(`${BRAND.name1} ${BRAND.name2} · ¡AMENIZAMOS TU FIESTA!`, CX, 175); }
   else { c.textAlign = 'left'; c.fillText(`${BRAND.name1} ${BRAND.name2}`, 80, H - 70); }
   c.restore();
 }
@@ -604,5 +636,5 @@ function renderFrame(f) {
   if (f < 2) { out.fillStyle = `rgba(0,0,0,${1 - f / 2})`; out.fillRect(0, 0, W, H); }
 }
 window.renderFrame = renderFrame; window.NFRAMES = NFRAMES;
-window.ready = (async () => { await Promise.all(['Fred', 'Nun'].map(f => document.fonts.load(`40px ${f}`, 'ÁÉÍÑ¡!¿?'))); await document.fonts.ready; return true; })();
+window.ready = (async () => { await loadClips(); await Promise.all(['Fred', 'Nun'].map(f => document.fonts.load(`40px ${f}`, 'ÁÉÍÑ¡!¿?'))); await document.fonts.ready; return true; })();
 </script></body></html>

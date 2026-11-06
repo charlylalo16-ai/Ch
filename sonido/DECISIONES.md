@@ -27,20 +27,25 @@ Usé el mismo método que en los videos anteriores: todo está hecho con código
   - bajo cumbiero y acordeón con **eco de sonidero** (*delay* de 3/16);
   - los clásicos **"láser"** de sonidero, que en pantalla se ven como rayos sincronizados.
 - **Identidad de fiesta nocturna:** fondo morado noche con magenta, cian y amarillo neón. Las bocinas laten con el bombo y hay luces robóticas y bola disco con destellos.
-- **Clips de video:** como todavía no tengo tus videos, cada marco muestra una **pista de baile animada**, con gente bailando al ritmo, piso de colores y luces. En cuanto me mandes tus clips, entran en esos marcos.
+- **Tu video (VID-20261105-WA0017, vertical, 10,5 s):** lo usé en los 4 marcos de eventos, un tramo distinto en cada uno (0–2,5 s, 2,5–5 s, 5–7,5 s y 7,5–10 s), para que no se repita ninguna toma. Le subí un poco la saturación y el contraste para que las luces se vean más vivas.
+  - **En vertical**, el marco tiene la misma proporción que tu video, así que se ve completo y grande.
+  - **En horizontal**, tu video va al centro y detrás una copia desenfocada llena el marco, que es la técnica estándar para poner video vertical en pantalla ancha.
+  - El audio original del clip no se usa; suena la cumbia sonidera, para que todo vaya al ritmo.
+  - Si me mandas más clips, cada evento puede tener su propio video. La pista de baile animada queda como respaldo para cualquier marco sin clip.
 - **Zonas seguras en vertical:** los textos importantes quedan arriba de la franja donde TikTok y Reels ponen sus botones.
 
 ## Pendiente (me lo tienes que pasar)
 
 1. **El nombre exacto del sonido.** Por ahora dice "SONIDO / Y KARAOKE". Se cambia en una sola línea (`BRAND`).
 2. **El teléfono o WhatsApp.** El cierre dice "Informes y contrataciones" y hay espacio listo para el número. No inventé ninguno.
-3. **Tus videos de eventos**, para reemplazar la pista animada de cada marco.
+3. **Más videos (opcional)**: con uno por evento (un cumpleaños, un bautizo, unos XV, una boda) queda todavía más fuerte.
 4. **Redes sociales y ciudad**, si quieres que salgan.
 
 ## Iteraciones
 
 1. **v1:** la gente de la pista salía amontonada al centro. En horizontal, la bocina derecha tapaba "Y KARAOKE". En vertical, la etiqueta se encimaba con el logo. El ícono del teléfono no se entendía.
-2. **v2:** repartí a la gente a lo ancho, quité las bocinas del logo en horizontal, bajé la etiqueta y redibujé el teléfono. Con eso hice el render final.
+2. **v2:** repartí a la gente a lo ancho, quité las bocinas del logo en horizontal, bajé la etiqueta y redibujé el teléfono.
+3. **v3, con tu video:** detuve el render que iba corriendo para meter tu clip. Ajusté el marco vertical a la proporción del video, porque al principio quedaban franjas desenfocadas a los lados, y moví la etiqueta para que no chocara con la tilde de la Ñ.
 
 ## Rehacerlo
 
