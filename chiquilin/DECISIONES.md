@@ -55,3 +55,25 @@ Son 6 videos con la misma calidad y el mismo método que el showreel. Todo está
 ## Tiempo
 
 De las 18:47 a las 19:21 UTC, unos 35 minutos: análisis de la marca en tu repo, música, motor visual, 2 iteraciones y render de 6 videos (el render se interrumpió una vez por límite de tiempo y se reanudó sin perder lo ya hecho).
+
+
+---
+
+## Actualización: logo original y precios nuevos
+
+**Pedido del cliente:** usar el logo original, cambiar los productos y precios a suaves $18, volcanes $21, dorados $21 y consomé $10, y quitar los refrescos.
+
+- **Logo:** el original va en la intro, en el cierre y en chico en cada escena de platillo. Le quité el fondo blanco con código y le puse un borde crema tipo sticker con sombra, para que se lea sobre cualquier color, incluido el rojo.
+- **Productos:**
+  - Tacos suaves $18. Es nuevo y lo dibujé con tortilla suave, sin dorar.
+  - Tacos dorados $21.
+  - Volcanes $21.
+  - Consomé $10.
+- **Quitado:** la escena de bebidas, y también Sube y Quesadilla, porque no venían en la lista nueva.
+- **Escena nueva "MENÚ":** los 4 productos con sus precios en una sola pantalla, para que la gente pueda pausar y verlos todos. Va justo antes de "¡TE ESPERAMOS!".
+- **Intro:** primero "¡YA LLEGÓ!" y después el logo cae con rebote justo con la corrida del acordeón.
+- **Música:** no cambió, porque las escenas siguen siendo 8 compases.
+
+### Pendiente del cliente
+- Dirección o ubicación, días y horario, teléfono o WhatsApp para pedidos, redes sociales, y si tienen servicio a domicilio.
+- Confirmar que Sube y Quesadilla ya no se venden.

@@ -38,23 +38,22 @@ function noise1(x, s = 0) { const i = Math.floor(x), f = x - i, u = f * f * (3 -
 // ============================================================ timeline
 const DATA = {
   products: [
-    { name: ['TACO', 'DORADO'], price: '$25', ill: 'taco', bg: C.ROJO, fg: C.CREMA, ac: C.AMA },
-    { name: ['VOLCÁN'], price: '$35', ill: 'volcan', bg: C.AMA, fg: C.CAFE, ac: C.ROJO },
-    { name: ['SUBE'], price: '$40', ill: 'sube', bg: C.CAFE, fg: C.CREMA, ac: C.AMA },
-    { name: ['QUESA-', 'DILLA'], price: '$45', ill: 'quesadilla', bg: C.NAR, fg: C.CREMA, ac: C.AMA },
-    { name: ['CONSOMÉ'], prices: [['CHICO', '$20'], ['GRANDE', '$35']], ill: 'consome', bg: C.CREMA, fg: C.CAFE, ac: C.ROJO },
+    { name: ['TACOS', 'SUAVES'], short: 'TACOS SUAVES', price: '$18', ill: 'suave', bg: C.ROJO, fg: C.CREMA, ac: C.AMA },
+    { name: ['TACOS', 'DORADOS'], short: 'TACOS DORADOS', price: '$21', ill: 'taco', bg: C.CAFE, fg: C.CREMA, ac: C.AMA },
+    { name: ['VOLCANES'], short: 'VOLCANES', price: '$21', ill: 'volcan', bg: C.AMA, fg: C.CAFE, ac: C.ROJO },
+    { name: ['CONSOMÉ'], short: 'CONSOMÉ', price: '$10', ill: 'consome', bg: C.CREMA, fg: C.CAFE, ac: C.ROJO },
   ],
 };
 const TL = {
-  menu: [['intro'], ['prod', 0], ['prod', 1], ['prod', 2], ['prod', 3], ['prod', 4], ['bebidas'], ['final', '¡TE ESPERAMOS!']],
+  menu: [['intro'], ['prod', 0], ['prod', 1], ['prod', 2], ['prod', 3], ['lista'], ['espera'], ['final', '¡TE ESPERAMOS!']],
   intro: [['intro'], ['final', null]],
   cierre: [['espera'], ['final', '¡SÍGUENOS!']],
 }[PIECE];
 const DUR = TL.length * BAR, NFRAMES = Math.round(DUR * FPS);
 const KICKS = [];
-TL.forEach((s, b) => { if (s[0] === 'prod' || s[0] === 'bebidas' || s[0] === 'espera') for (let k = 0; k < 4; k++) KICKS.push(b * BAR + k * BEAT); if (s[0] === 'final') KICKS.push(b * BAR); });
+TL.forEach((s, b) => { if (s[0] === 'prod' || s[0] === 'lista' || s[0] === 'espera') for (let k = 0; k < 4; k++) KICKS.push(b * BAR + k * BEAT); if (s[0] === 'final') KICKS.push(b * BAR); });
 function kickEnv(t, r = 10) { let v = 0; for (const k of KICKS) if (t >= k && t - k < .5) v = Math.max(v, Math.exp(-(t - k) * r)); return v; }
-function bgOf(seg) { if (seg[0] === 'prod') return DATA.products[seg[1]].bg; return { intro: C.CREMA, bebidas: C.VERDE, final: C.CAFE, espera: C.ROJO }[seg[0]]; }
+function bgOf(seg) { if (seg[0] === 'prod') return DATA.products[seg[1]].bg; return { intro: C.CREMA, lista: C.CAFE, final: C.CAFE, espera: C.ROJO }[seg[0]]; }
 
 // ============================================================ text
 function font(c, size, fam) { c.font = `${size}px ${fam}`; }
@@ -163,24 +162,26 @@ function meat(c, seed, x0, x1, ytop, ybase, t) {
   // juicy highlights
   c.fillStyle = C.CARNE2; for (const [x, y, rr2] of pts) { c.beginPath(); c.arc(x - rr2 * 0.25, y - rr2 * 0.3, rr2 * 0.45, 0, 7); c.fill(); }
 }
-function tacoShell(c, t, wob = 0) {
+function tacoShell(c, t, wob = 0, soft = false) {
+  const SH1 = soft ? '#f6e2b3' : C.ORO, SH2 = soft ? '#e3c78e' : C.ORO2;
   // back lip
   c.beginPath(); c.moveTo(-250, -10); c.quadraticCurveTo(0, -110, 250, -10); c.quadraticCurveTo(0, 45, -250, -10); c.closePath();
-  c.fillStyle = C.ORO2; c.fill(); stk(c);
+  c.fillStyle = SH2; c.fill(); stk(c);
   meat(c, 11, -215, 215, -95, -5, t);
   bits(c, 5, 16, -190, 190, x => -60 - 40 * Math.cos(x / 215 * Math.PI / 2), t);
   // front shell
   c.beginPath(); c.moveTo(-250, -10); c.bezierCurveTo(-255, 205, 255, 205, 250, -10); c.quadraticCurveTo(0, 50 + wob, -250, -10); c.closePath();
-  c.fillStyle = C.ORO; c.fill();
+  c.fillStyle = SH1; c.fill();
   c.save(); c.clip();
-  const r = mulberry(9); c.fillStyle = C.ORO2;
-  for (let i = 0; i < 26; i++) { c.beginPath(); c.ellipse(-220 + r() * 440, 20 + r() * 140, 6 + r() * 12, 4 + r() * 6, r() * 3, 0, 7); c.fill(); }
+  const r = mulberry(9); c.fillStyle = soft ? 'rgba(201,140,60,0.35)' : C.ORO2;
+  for (let i = 0; i < (soft ? 14 : 26); i++) { c.beginPath(); c.ellipse(-220 + r() * 440, 20 + r() * 140, 6 + r() * 12, 4 + r() * 6, r() * 3, 0, 7); c.fill(); }
   c.strokeStyle = 'rgba(255,240,190,0.7)'; c.lineWidth = 10; c.beginPath(); c.moveTo(-200, 40); c.quadraticCurveTo(-170, 140, -60, 160); c.stroke();
   c.restore();
   c.beginPath(); c.moveTo(-250, -10); c.bezierCurveTo(-255, 205, 255, 205, 250, -10); c.quadraticCurveTo(0, 50 + wob, -250, -10); c.closePath(); stk(c, 10);
 }
 const ILL = {
   taco(c, t) { tacoShell(c, t, Math.sin(t * 6) * 4); },
+  suave(c, t) { c.save(); c.rotate(-0.06); tacoShell(c, t + 2, Math.sin(t * 6) * 6, true); c.restore(); },
   sube(c, t) {
     c.save(); c.translate(70, -110); c.scale(0.8, 0.8); c.rotate(0.12); tacoShell(c, t + 1); c.restore();
     c.save(); c.translate(-40, 40); tacoShell(c, t); c.restore();
@@ -315,6 +316,22 @@ function starburst(c, x, y, r, rot, fill, label, price, o = {}) {
   c.restore();
 }
 
+// ============================================================ original logo (client artwork, background removed)
+const LOGO = new Image(); let LOGO_OUT = null;
+async function loadLogo() {
+  LOGO.src = 'brand/logo.png'; await LOGO.decode();
+  const pad = 26, r = 14, w = LOGO.naturalWidth, h = LOGO.naturalHeight, o = mk(w + pad * 2, h + pad * 2), x = o.getContext('2d');
+  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; x.drawImage(LOGO, pad + Math.cos(a) * r, pad + Math.sin(a) * r); }
+  x.globalCompositeOperation = 'source-in'; x.fillStyle = C.CREMA; x.fillRect(0, 0, o.width, o.height);
+  x.globalCompositeOperation = 'source-over'; x.drawImage(LOGO, pad, pad); LOGO_OUT = o;
+}
+function drawLogo(c, x, y, h, s = 1, rot = 0) { // h = target height, centred on x,y
+  if (!LOGO_OUT || s <= 0) return; const w = h * LOGO_OUT.width / LOGO_OUT.height;
+  c.save(); c.translate(x, y); c.rotate(rot); c.scale(s, s);
+  c.shadowColor = 'rgba(26,8,0,0.35)'; c.shadowOffsetX = h * 0.02; c.shadowOffsetY = h * 0.028;
+  c.drawImage(LOGO_OUT, -w / 2, -h / 2, w, h); c.restore();
+}
+
 // ============================================================ scenes  (lt = local time in bar, b = bar index)
 function wipeIn(c, b, lt, drawPrev) {
   // slanted band wipe right→left with an accent edge; returns clip path builder
@@ -337,42 +354,31 @@ let CURBG = null;
 function drawSeg(c, b, lt, t) {
   const seg = TL[b]; CURBG = bgOf(seg);
   c.save();
-  ({ intro: sIntro, prod: sProd, bebidas: sBebidas, final: sFinal, espera: sEspera })[seg[0]](c, lt, t, seg, b);
+  ({ intro: sIntro, prod: sProd, lista: sLista, bebidas: sBebidas, final: sFinal, espera: sEspera })[seg[0]](c, lt, t, seg, b);
   c.restore();
 }
 
 function sIntro(c, lt, t) {
   bg(c, C.CREMA, 0.10 * E.outExpo(prog(lt, 0, 0.8)), t, CX, CY, C.ROJO);
   papel(c, t, E.outBounce(prog(lt, 0.0, 0.7)));
-  const word = 'CHIQUILÍN';
-  const size = fit(c, word, 'Fred', W * 0.84, V ? 250 : 270, -4);
-  const m = measure(c, word, size, 'Fred', -4);
-  const y = CY + size * 0.3 + (V ? -40 : 30);
-  // "EL" + pill
-  const pe = E.outBack(prog(lt, STEP * 4, STEP * 4 + 0.25), 2.5);
-  if (pe > 0) {
-    c.save(); c.translate(CX - m.w / 2 + size * 0.2, y - size * 0.95); c.scale(pe, pe); c.rotate(-0.12);
-    popText(c, 'EL', 0, 0, size * 0.42, { fill: C.AMA, align: 'left' }); c.restore();
+  // the original logo lands with the accordion run (step 7) and settles with a squash
+  const lp = prog(lt, STEP * 7, STEP * 7 + 0.7);
+  if (lp > 0) {
+    const sc2 = E.outElastic(lp), squash = Math.exp(-(lt - STEP * 7) * 6) * Math.sin((lt - STEP * 7) * 30) * 0.06;
+    const hh = V ? 700 : 690;
+    drawLogo(c, CX, V ? CY - 60 : CY + 20, hh, sc2, (1 - E.outC(lp)) * -0.35 + Math.sin(t * 2) * 0.015);
+    if (squash) { /* squash is folded into the elastic scale */ }
   }
-  for (let i = 0; i < word.length; i++) {
-    const st = STEP * (7 + i), p = prog(lt, st, st + 0.14);
-    if (p <= 0) continue;
-    const s = lerp(2.4, 1, E.outBack(p, 2)), g = m.L[i];
-    const x = CX - m.w / 2 + g.x + g.w / 2;
-    const rot = (h2(i, 1) - 0.5) * 0.3 * (1 - p) + Math.sin(t * 5 + i) * 0.02;
-    c.save(); c.translate(x, y); c.rotate(rot); c.scale(s, s); c.globalAlpha = clamp(p * 3);
-    popText(c, g.ch, 0, 0, size, { fill: i % 2 ? C.NAR : C.ROJO, align: 'center', dcol: C.CAFE, depth: Math.round(size * 0.07) });
-    c.restore();
-  }
-  const pp = E.outBack(prog(lt, STEP * 4, STEP * 4 + 0.3), 2);
-  if (pp > 0) { c.save(); c.translate(CX, y + size * 0.42); c.scale(pp, pp); pill(c, 'TACOS DE BIRRIA', 0, 0, V ? 46 : 44, C.ROJO, C.CREMA); c.restore(); }
+  const pp = E.outBack(prog(lt, STEP * 2, STEP * 2 + 0.3), 2) * (1 - prog(lt, STEP * 6.5, STEP * 7));
+  if (pp > 0) { c.save(); c.translate(CX, V ? CY - 60 : CY); c.scale(pp, pp); popText(c, '¡YA LLEGÓ!', 0, 0, V ? 150 : 170, { align: 'center', fill: C.ROJO, dcol: C.CAFE }); c.restore(); }
   // tiny spinning taco icons orbiting in on the build
   for (let k = 0; k < 3; k++) {
     const p = E.outBack(prog(lt, STEP * (1 + k * 1.5), STEP * (1 + k * 1.5) + 0.4));
     if (p <= 0) continue;
     const fn = [ILL.taco, ILL.volcan, (cc, tt) => ILL.consome(cc, tt)][k];
     const xx = W * (V ? 0.2 + k * 0.3 : 0.3 + k * 0.2), yy = H * (V ? 0.76 : 0.84) + Math.sin(t * 5 + k) * 8;
-    stamp(c, l => fn(l, t), xx, yy, (V ? 0.42 : 0.36) * p, Math.sin(t * 3 + k) * 0.2);
+    const fadeOut = 1 - E.outC(prog(lt, STEP * 6.5, STEP * 8.5));
+    if (fadeOut > 0) stamp(c, l => fn(l, t), xx, yy + (1 - fadeOut) * 300, (V ? 0.42 : 0.36) * p * fadeOut, Math.sin(t * 3 + k) * 0.2);
   }
 }
 
@@ -409,7 +415,7 @@ function sProd(c, lt, t, seg, b) {
   L.lab = firstY - size * 0.82 - 34;
   // label pill (sits right above the name)
   const lp = E.outBack(prog(lt, 0.1, 0.4), 2);
-  if (lp > 0) { c.save(); c.translate(L.tx, L.lab); c.scale(lp, lp); pill(c, `MENÚ · ${String(seg[1] + 1).padStart(2, '0')}/05`, 0, 0, 30, P.ac, P.ac === C.AMA ? C.CAFE : C.CREMA, { align: L.align === 'center' ? 'c' : 'left' }); c.restore(); }
+  if (lp > 0) { c.save(); c.translate(L.tx, L.lab); c.scale(lp, lp); pill(c, `MENÚ · ${String(seg[1] + 1).padStart(2, '0')}/${String(DATA.products.length).padStart(2, '0')}`, 0, 0, 30, P.ac, P.ac === C.AMA ? C.CAFE : C.CREMA, { align: L.align === 'center' ? 'c' : 'left' }); c.restore(); }
   lines.forEach((ln, li) => {
     const m = measure(c, ln, size, 'Fred', -2);
     const x0 = L.align === 'center' ? L.tx - m.w / 2 : L.tx;
@@ -439,14 +445,34 @@ function sProd(c, lt, t, seg, b) {
   papel(c, t, 1);
 }
 function brandFooter(c, idx, P) {
-  const y = V ? 270 : H - 64, col = P ? (P.fg) : C.CREMA;
-  c.save(); c.globalAlpha = 0.95; font(c, 30, 'Fred'); c.fillStyle = col; c.textBaseline = 'middle';
-  if (V) { c.textAlign = 'center'; c.fillText('EL CHIQUILÍN · TACOS DE BIRRIA', CX, y); }
+  if (V) drawLogo(c, CX, 300, 150);
   else {
-    c.textAlign = 'left'; c.fillText('EL CHIQUILÍN · TACOS DE BIRRIA', 70, y);
-    if (idx !== null && idx !== undefined) for (let i = 0; i < 5; i++) { c.beginPath(); c.arc(W - 200 + i * 30, y, i === idx ? 9 : 5, 0, 7); c.fill(); }
+    drawLogo(c, 175, H - 105, 150);
+    c.save(); c.fillStyle = P ? P.fg : C.CREMA;
+    if (idx !== null && idx !== undefined) for (let i = 0; i < DATA.products.length; i++) { c.beginPath(); c.arc(W - 170 + i * 30, H - 64, i === idx ? 9 : 5, 0, 7); c.fill(); }
+    c.restore();
   }
-  c.restore();
+}
+function sLista(c, lt, t) {
+  bg(c, C.CAFE, 0.5, t, CX, CY, C.CAFE2);
+  const tp = E.outBack(prog(lt, 0.02, 0.35), 2);
+  const ty = V ? 520 : 330;
+  if (tp > 0) { c.save(); c.translate(CX, ty); c.scale(tp, tp); popText(c, 'MENÚ', 0, 0, V ? 170 : 130, { align: 'center', fill: C.AMA, dcol: C.ROJOD }); c.restore(); }
+  const x0 = V ? 90 : W * 0.22, x1 = V ? W - 90 : W * 0.78, y0 = V ? 700 : 470, dy = V ? 210 : 140;
+  DATA.products.forEach((P, i) => {
+    const st = BEAT * 0.5 + i * STEP * 2, p = E.outExpo(prog(lt, st, st + 0.45)); if (p <= 0) return;
+    const y = y0 + i * dy, dx = (1 - p) * (i % 2 ? 300 : -300);
+    c.save(); c.globalAlpha = clamp(p * 2); c.translate(dx, 0);
+    stamp(c, l => ILL[P.ill](l, t), x0 + 70, y, V ? 0.28 : 0.22, Math.sin(t * 3 + i) * 0.1);
+    const ns = V ? 64 : 66; const nx = x0 + (V ? 160 : 150);
+    popText(c, P.short, nx, y + ns * 0.36, ns, { fill: C.CREMA, dcol: C.ROJOD, depth: 4 });
+    const nw = measure(c, P.short, ns, 'Fred').w, pw = measure(c, P.price, ns * 1.15, 'Fred').w;
+    c.fillStyle = 'rgba(255,249,238,0.45)'; for (let x = nx + nw + 24; x < x1 - pw - 24; x += 22) { c.beginPath(); c.arc(x, y + 8, 4, 0, 7); c.fill(); }
+    popText(c, P.price, x1, y + ns * 0.4, ns * 1.15, { align: 'right', fill: C.AMA, dcol: C.ROJOD, depth: 5 });
+    c.restore();
+  });
+  brandFooter(c, null, { fg: C.CREMA });
+  papel(c, t, 1);
 }
 function sBebidas(c, lt, t) {
   const kb = kickEnv(t, 9);
@@ -489,7 +515,7 @@ function sEspera(c, lt, t) {
     popText(c, w, 0, 0, size, { align: 'center', fill: i === 1 ? C.AMA : C.CREMA }); c.restore();
   });
   // icons parade
-  const icons = [ILL.taco, ILL.volcan, (l, tt) => ILL.consome(l, tt), ILL.quesadilla];
+  const icons = [ILL.suave, ILL.taco, ILL.volcan, (l, tt) => ILL.consome(l, tt)];
   const yy = V ? H * 0.80 : H * 0.86, sp = V ? 300 : 360;
   for (let k = -1; k < Math.ceil(W / sp) + 1; k++) {
     const x = ((k * sp + lt * 260) % (W + sp)) - sp / 2;
@@ -511,43 +537,16 @@ function sFinal(c, lt, t, seg) {
     c.save(); c.translate(bx + dx, by + dy); c.rotate(sp + tt * 8 * (k - 0.5)); c.scale(1, Math.cos(tt * 10 + sp)); c.globalAlpha = al;
     c.fillStyle = FLAG_COLS[ci]; c.fillRect(-s / 2, -s * 0.35, s, s * 0.7); c.restore();
   }
-  // badge
-  const bp = E.outElastic(prog(lt, 0.0, 0.8)), R = V ? 250 : 225;
-  c.save(); c.translate(bx, by); c.scale(bp, bp); c.rotate((1 - bp) * -1.2);
-  c.fillStyle = C.ROJOD; c.beginPath(); c.arc(12, 16, R, 0, 7); c.fill();
-  c.fillStyle = C.AMA; c.beginPath(); c.arc(0, 0, R, 0, 7); c.fill(); c.strokeStyle = C.CAFE; c.lineWidth = 10; c.stroke();
-  c.fillStyle = C.ROJO; c.beginPath(); c.arc(0, 0, R * 0.86, 0, 7); c.fill(); c.stroke();
-  // ring text
-  const ring = ' TACOS DE BIRRIA ★ EL CHIQUILÍN ★';
-  font(c, R * 0.15, 'Fred'); c.fillStyle = C.CREMA; c.textAlign = 'center'; c.textBaseline = 'middle';
-  const rot0 = t * 0.5;
-  for (let i = 0; i < ring.length; i++) { const a = rot0 + i / ring.length * Math.PI * 2; c.save(); c.rotate(a); c.translate(0, -R * 0.73); c.fillText(ring[i], 0, 0); c.restore(); }
-  c.fillStyle = C.CREMA; c.beginPath(); c.arc(0, 0, R * 0.6, 0, 7); c.fill(); c.strokeStyle = C.CAFE; c.lineWidth = 8; c.stroke();
-  c.restore();
-  if (bp > 0.05) stamp(c, l => ILL.taco(l, t), bx, by + 8, 0.38 * bp, Math.sin(t * 3) * 0.08, 'rgba(26,8,0,0.25)');
-  // wordmark
-  const word = 'CHIQUILÍN';
-  const size = V ? fit(c, word, 'Fred', W * 0.86, 210, -3) : fit(c, word, 'Fred', W * 0.46, 200, -3);
-  const m = measure(c, word, size, 'Fred', -3);
-  const wx = V ? CX - m.w / 2 : W * 0.5, wy = V ? H * 0.67 : H * 0.53;
-  const pe = E.outBack(prog(lt, 0.1, 0.4), 2.5);
-  if (pe > 0) { c.save(); c.translate(wx + 10, wy - size * 0.92); c.scale(pe, pe); c.rotate(-0.1); popText(c, 'EL', 0, 0, size * 0.4, { fill: C.AMA, dcol: C.ROJOD }); c.restore(); }
-  for (let i = 0; i < word.length; i++) {
-    const p = E.outBack(prog(lt, 0.12 + i * 0.035, 0.5 + i * 0.035), 2.2); if (p <= 0) continue;
-    const g = m.L[i];
-    c.save(); c.translate(wx + g.x + g.w / 2, wy - (1 - p) * 90); c.scale(p, p);
-    popText(c, g.ch, 0, 0, size, { align: 'center', fill: C.CREMA, dcol: C.ROJO, stroke: C.CAFE, depth: Math.round(size * 0.08) });
-    c.restore();
-  }
-  const tp = E.outBack(prog(lt, STEP * 4, STEP * 4 + 0.3), 2);
-  const pillX = V ? CX : wx, pillY = wy + size * 0.5;
-  if (tp > 0) { c.save(); c.translate(pillX, pillY); c.scale(tp, tp); pill(c, 'TACOS DE BIRRIA', 0, 0, 40, C.AMA, C.CAFE, { align: V ? 'c' : 'left' }); c.restore(); }
+  // original logo, landing with the impact and breathing afterwards
+  const bp = E.outElastic(prog(lt, 0.0, 0.8));
+  const lh = V ? 720 : 640, ly = V ? H * 0.37 : H * 0.42;
+  drawLogo(c, CX, ly, lh, bp * (1 + 0.012 * Math.sin(t * 5)), (1 - bp) * -0.6);
   if (cta) {
     const cp = E.outElastic(prog(lt, STEP * 6, STEP * 6 + 0.8));
     if (cp > 0) {
-      const cs = V ? 110 : 92;
-      c.save(); c.translate(V ? CX : wx, pillY + cs * 1.45); c.scale(cp, cp); c.rotate(-0.04 + Math.sin(t * 6) * 0.02);
-      popText(c, cta, 0, 0, cs, { align: V ? 'center' : 'left', fill: C.AMA, dcol: C.ROJOD, depth: 6 }); c.restore();
+      const cs = V ? 120 : 100;
+      c.save(); c.translate(CX, V ? H * 0.66 : H * 0.88); c.scale(cp, cp); c.rotate(-0.03 + Math.sin(t * 6) * 0.02);
+      popText(c, cta, 0, 0, cs, { align: 'center', fill: C.AMA, dcol: C.ROJOD, depth: 6 }); c.restore();
     }
   }
   papel(c, t, 1);
@@ -582,5 +581,5 @@ function renderFrame(f) {
   if (f < 2) { out.fillStyle = `rgba(0,0,0,${1 - f / 2})`; out.fillRect(0, 0, W, H); }
 }
 window.renderFrame = renderFrame; window.NFRAMES = NFRAMES; window.SIZE = [W, H];
-window.ready = (async () => { await Promise.all(['Fred', 'FredS', 'Nun'].map(f => document.fonts.load(`40px ${f}`, 'ÁÉÍ¡!$0'))); await document.fonts.ready; return true; })();
+window.ready = (async () => { await loadLogo(); await Promise.all(['Fred', 'FredS', 'Nun'].map(f => document.fonts.load(`40px ${f}`, 'ÁÉÍ¡!$0'))); await document.fonts.ready; return true; })();
 </script></body></html>
