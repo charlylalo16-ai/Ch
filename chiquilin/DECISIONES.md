@@ -74,6 +74,9 @@ De las 18:47 a las 19:21 UTC, unos 35 minutos: análisis de la marca en tu repo,
 - **Intro:** primero "¡YA LLEGÓ!" y después el logo cae con rebote justo con la corrida del acordeón.
 - **Música:** no cambió, porque las escenas siguen siendo 8 compases.
 
-### Pendiente del cliente
-- Dirección o ubicación, días y horario, teléfono o WhatsApp para pedidos, redes sociales, y si tienen servicio a domicilio.
-- Confirmar que Sube y Quesadilla ya no se venden.
+### Segunda actualización: imágenes del cliente, horario, teléfono
+- **Imágenes de los platillos:** el cliente las creó con los prompts que le pasé. Les quité el fondo con código, sin dejar borde blanco, y reemplazan a los dibujos vectoriales en todas las escenas (platillos, menú, intro e info).
+- **Escena nueva "HORARIO"**, en lugar de "¡TE ESPERAMOS!": Sábados y domingos desde las 9 am, ¡Servicio a domicilio! y el teléfono 443 198 2156.
+- **Cierre:** logo, "¡TE ESPERAMOS!", teléfono y la línea "Servicio a domicilio · Sábados y domingos desde las 9 am".
+- **Sube y Quesadilla:** el cliente confirmó que ya no se venden, así que quedan fuera.
+- **Sin dirección, redes ni hora de cierre:** no los pongo porque no los dio, y no inventé ninguno.
