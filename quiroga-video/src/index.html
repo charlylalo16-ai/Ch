@@ -318,27 +318,36 @@ function drawCaption(c, t) {
   c.restore();
 }
 function brandMark(c, t) {
-  const lg = IMG[A + 'logo-blanco.png']; if (!lg) return;
-  const a = prog(t, T_INTRO + 0.2, T_INTRO + 1.0) * (1 - prog(t, T_OUTRO - 0.4, T_OUTRO)); if (a <= 0) return;
-  const hh = V ? 78 : 96, ww = hh * lg.width / lg.height;
-  c.save(); c.globalAlpha = a; c.drawImage(lg, V ? CX - ww / 2 : 140, V ? 46 : 64, ww, hh); c.restore();
+  const lg = IMG[A + 'logo-color.png']; if (!lg) return;
+  const a = 0.95 * prog(t, T_INTRO + 0.2, T_INTRO + 1.0) * (1 - prog(t, T_OUTRO - 0.4, T_OUTRO)); if (a <= 0) return;
+  const hh = V ? 70 : 80, ww = hh * lg.width / lg.height;
+  c.save(); c.globalAlpha = a; c.fillStyle = 'rgba(255,255,255,0.95)';
+  const bx = V ? CX - ww / 2 - 18 : 150 - 18, by = V ? 40 : 60; rr(c, bx, by, ww + 36, hh + 20, 18); c.fill(); c.drawImage(lg, bx + 18, by + 10, ww, hh); c.restore();
 }
 
-// ---------------------------------------------------------------- intro & outro (blue + otomí, flowers grow)
+// ---------------------------------------------------------------- intro & outro (white, Ayuntamiento style, like v1)
+function whiteBase(c) {
+  c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+  c.fillStyle = C.AZUL; c.beginPath(); c.moveTo(0, H); c.lineTo(0, H * 0.82); c.quadraticCurveTo(W * 0.35, H * 0.9, W * 0.55, H); c.fill();
+  c.fillStyle = C.ROSA; c.beginPath(); c.moveTo(W, 0); c.lineTo(W, H * 0.14); c.quadraticCurveTo(W * 0.7, H * 0.08, W * 0.55, 0); c.fill();
+}
 function drawIntro(c, t) {
-  const lg = IMG[A + 'logo-blanco.png'];
+  const lg = IMG[A + 'logo-color.png'];
   const leave = E.inOutC(prog(t, 4.2, 5.0));
-  c.save(); c.globalAlpha = 1 - leave;
+  c.save(); if (leave > 0) { c.beginPath(); c.rect(0, 0, W, H); c.arc(LAY.pcx, LAY.pcy, Math.hypot(W, H) * leave, 0, 7, true); c.clip(); }
+  whiteBase(c);
   const lp = E.outC(prog(t, 1.3, 2.6));
-  if (lg && lp > 0) { const w = V ? 900 : 1080, h = w * lg.height / lg.width; c.save(); c.globalAlpha = lp * (1 - leave); c.translate(CX, (V ? CY - 200 : CY - 110) + (1 - lp) * 40 - leave * 120); c.scale(0.94 + 0.06 * lp, 0.94 + 0.06 * lp); c.drawImage(lg, -w / 2, -h / 2, w, h); c.restore(); }
+  if (lg && lp > 0) { const w = V ? 900 : 1080, h = w * lg.height / lg.width; c.save(); c.globalAlpha = lp; c.translate(CX, (V ? CY - 200 : CY - 110) + (1 - lp) * 40); c.scale(0.94 + 0.06 * lp, 0.94 + 0.06 * lp); c.drawImage(lg, -w / 2, -h / 2, w, h); c.restore(); }
   const tp = E.outC(prog(t, 2.6, 3.4));
-  if (tp > 0) { c.save(); c.globalAlpha = tp * (1 - leave); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
-    font(c, V ? 92 : 86, 800); c.fillStyle = '#fff'; c.fillText('Quiroga Digital', CX, (V ? CY + 210 : CY + 260) + (1 - tp) * 30);
-    font(c, 42, 600); c.fillStyle = '#ffb3d9'; c.fillText('La app de tu municipio', CX, (V ? CY + 280 : CY + 325) + (1 - tp) * 30); c.restore(); }
+  if (tp > 0) { c.save(); c.globalAlpha = tp; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    font(c, V ? 92 : 86, 800); c.fillStyle = C.AZUL; c.fillText('Quiroga Digital', CX, (V ? CY + 210 : CY + 260) + (1 - tp) * 30);
+    font(c, 42, 600); c.fillStyle = C.ROSA; c.fillText('La app de tu municipio', CX, (V ? CY + 280 : CY + 325) + (1 - tp) * 30); c.restore(); }
   c.restore();
 }
 function drawOutro(c, t) {
-  const lt = t - T_OUTRO, lg = IMG[A + 'logo-blanco.png'], ic = IMG[A + 'icon.png'];
+  const lt = t - T_OUTRO, lg = IMG[A + 'logo-color.png'], ic = IMG[A + 'icon.png'];
+  const wipe = E.inOutC(prog(lt, 0, 0.9));
+  c.save(); c.beginPath(); c.arc(CX, V ? 1000 : CY, Math.hypot(W, H) * wipe, 0, 7); c.clip(); whiteBase(c);
   const lp = E.outC(prog(lt, 0.5, 1.6));
   if (lg && lp > 0) { const w = V ? 760 : 760, h = w * lg.height / lg.width; c.save(); c.globalAlpha = lp; c.translate(CX, (V ? 470 : 250) + (1 - lp) * 40); c.drawImage(lg, -w / 2, -h / 2, w, h); c.restore(); }
   const ip = E.outC(prog(lt, 1.4, 2.3)), iy = V ? 930 : 560;
@@ -346,19 +355,20 @@ function drawOutro(c, t) {
   const tp = E.outC(prog(lt, 1.9, 2.8));
   c.save(); c.globalAlpha = tp; c.textAlign = V ? 'center' : 'left'; c.textBaseline = 'alphabetic';
   const tx = V ? CX : CX - 280;
-  font(c, V ? 96 : 92, 800); c.fillStyle = '#fff'; c.fillText('Quiroga Digital', tx, (V ? 1140 : 545) + (1 - tp) * 30);
-  font(c, 44, 600); c.fillStyle = '#ffb3d9'; c.fillText('Tu municipio en tu celular', tx, (V ? 1210 : 610) + (1 - tp) * 30);
+  font(c, V ? 96 : 92, 800); c.fillStyle = C.AZUL; c.fillText('Quiroga Digital', tx, (V ? 1140 : 545) + (1 - tp) * 30);
+  font(c, 44, 600); c.fillStyle = C.ROSA; c.fillText('Tu municipio en tu celular', tx, (V ? 1210 : 610) + (1 - tp) * 30);
   c.restore();
   const feats = [[FA.tri, 'Alerta Mujer', C.ROJO], [FA.flag, 'Reportes', C.AZUL2], [FA.bullhorn, 'Avisos', C.ROSA], [FA.truck, 'Camión', '#a86a00'], [FA.comments, 'Mensajes', C.CELESTE]];
   feats.forEach(([ic2, lab, col], i) => {
     const fp = E.outC(prog(lt, 2.8 + i * 0.25, 3.5 + i * 0.25)); if (fp <= 0) return;
     const fx = V ? CX + (i - 2) * 196 : CX - 280 + i * 200 + 60, fy = (V ? 1430 : 760) + (1 - fp) * 30;
     c.save(); c.globalAlpha = fp; c.translate(fx, fy);
-    c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, 58, 0, 7); c.fill(); c.fillStyle = col; c.beginPath(); c.arc(0, 0, 50, 0, 7); c.fill(); icon(c, ic2, 0, 2, 42, '#fff');
-    font(c, 28, 700); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(lab, 0, 102); c.restore();
+    c.fillStyle = col; c.beginPath(); c.arc(0, 0, 56, 0, 7); c.fill(); icon(c, ic2, 0, 2, 42, '#fff');
+    font(c, 28, 700); c.fillStyle = C.TXT; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(lab, 0, 102); c.restore();
   });
   const pp = E.outC(prog(lt, 4.4, 5.1));
   if (pp > 0) { c.save(); c.globalAlpha = pp; c.translate(CX, (V ? 1660 : 945) + (1 - pp) * 20); font(c, 46, 800); const tw = c.measureText('¡Muy pronto en tu celular!').width; c.fillStyle = C.ROSA; rr(c, -tw / 2 - 44, -46, tw + 88, 92, 46); c.fill(); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('¡Muy pronto en tu celular!', 0, 3); c.restore(); }
+  c.restore();
 }
 
 // ---------------------------------------------------------------- frame
@@ -372,7 +382,7 @@ function drawFrame(c, t) {
   c.restore();
 }
 function needed(t) {
-  const L = [A + 'logo-blanco.png', A + 'icon.png', A + 'flores.png'];
+  const L = [A + 'logo-blanco.png', A + 'logo-color.png', A + 'icon.png'];
   const i = idxAt(t);
   for (const k of [i, i - 1]) if (k >= 0) { const n = S[k][1]; if (n === 'SPLASH') { L.push(scr('splash'), spl(splashFrame(t))); } else if (META[n]) L.push(scr(n)); }
   return L;
@@ -384,8 +394,8 @@ async function renderFrame(f) {
   await Promise.all([...keep].map(load)); evict(keep);
   for (let i = 0; i < n; i++) { sc.setTransform(1, 0, 0, 1, 0, 0); sc.globalAlpha = 1; drawFrame(sc, ts[i]); acc.globalAlpha = 1 / (i + 1); acc.drawImage(sceneCv, 0, 0); }
   acc.globalAlpha = 1; out.drawImage(accCv, 0, 0);
-  const fo = prog(t, DUR - 0.6, DUR - 0.02); if (fo > 0) { out.fillStyle = `rgba(8,24,70,${fo})`; out.fillRect(0, 0, W, H); }
+  const fo = prog(t, DUR - 0.6, DUR - 0.02); if (fo > 0) { out.fillStyle = `rgba(255,255,255,${fo})`; out.fillRect(0, 0, W, H); }
 }
 window.renderFrame = renderFrame; window.NFRAMES = DUR * FPS;
-window.ready = (async () => { await document.fonts.load('800 40px Jak'); await document.fonts.load('900 20px FA'); await document.fonts.ready; await Promise.all([A + 'logo-blanco.png', A + 'icon.png', A + 'flores.png'].map(load)); return true; })();
+window.ready = (async () => { await document.fonts.load('800 40px Jak'); await document.fonts.load('900 20px FA'); await document.fonts.ready; await Promise.all([A + 'logo-blanco.png', A + 'logo-color.png', A + 'icon.png'].map(load)); return true; })();
 </script></body></html>
