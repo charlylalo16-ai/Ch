@@ -4,7 +4,7 @@
 set -e; cd "$(dirname "$0")"; mkdir -p build out
 [ -f build/quiroga.wav ] || python3 src/synth.py build/quiroga.wav
 enc() {
-  local f=$1 tag=$([ $1 = v ] && echo 9x16 || echo 16x9) n=4 per=600; [ -f out/quiroga_digital_${tag}.mp4 ] && return 0
+  local f=$1 tag=$([ $1 = v ] && echo 9x16 || echo 16x9) n=4 per=1200; [ -f out/quiroga_digital_${tag}.mp4 ] && return 0
   : > build/list_$f.txt
   for ((k=0;k<n;k++)); do
     seg=build/seg_${f}_$k.mkv; echo "file 'seg_${f}_$k.mkv'" >> build/list_$f.txt
