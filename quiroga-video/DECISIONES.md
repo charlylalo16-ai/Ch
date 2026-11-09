@@ -1,4 +1,4 @@
-# Quiroga Digital: video promocional (40 s)
+# Quiroga Digital: video promocional (80 s)
 
 Entregables (no se suben al repo público):
 - `out/quiroga_digital_9x16.mp4`, vertical 1080×1920.
@@ -69,3 +69,19 @@ Todas las pantallas dentro del teléfono son **capturas de la app real** (`charl
 node lab/shoot.js lab/record.js lab/rec1    # capturas de la app (requiere el repo quiroga-app en /home/user)
 ./build.sh                                  # música + video en los dos formatos
 ```
+
+
+---
+
+## Versión 2 (pedido del cliente: más lento, sin confeti)
+
+- **Ritmo:** la duración pasó de 40 a **80 s** (96 BPM, 32 compases). Cada título y cada pantalla se quedan el tiempo suficiente para leerlos, y la Alerta Mujer ocupa unos 15 s.
+- **Una sola fuente de tiempos:** `src/gen_timeline.py` genera `timeline.json` y `timeline.js`, y de ahí leen el video y la música, así que siguen sincronizados.
+- **Diseño igual que la v1:** intro y cierre blancos con las franjas azul y rosa, y la parte del teléfono en azul. Quité el confeti, los pétalos y cualquier flor agregada; las únicas flores son las del logo.
+- **Lo que probé y descarté por indicación del cliente:**
+  - fondo azul con patrón otomí tono sobre tono;
+  - ramilletes de flores que crecen en las esquinas;
+  - fondo azul liso en la intro.
+
+  El cliente pidió volver al primer diseño, quitando sólo el confeti.
+- **Error corregido:** la música fallaba al leer los toques con el nuevo formato de la línea de tiempo.
