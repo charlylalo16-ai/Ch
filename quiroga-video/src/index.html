@@ -276,8 +276,6 @@ function drawBG(c, t) {
   const g = c.createRadialGradient(CX, CY, 50, CX, CY, Math.hypot(W, H) * 0.7);
   g.addColorStop(0, mixc([22, 52, 130], [130, 18, 52], am)); g.addColorStop(1, mixc([11, 34, 94], [70, 6, 28], am));
   c.fillStyle = g; c.fillRect(0, 0, W, H);
-  if (!PATTERN) PATTERN = c.createPattern(PAT, 'repeat');
-  c.save(); c.translate(-(t * 6) % 600, -(t * 3) % 600); c.fillStyle = PATTERN; c.fillRect(0, 0, W + 600, H + 600); c.restore();
   if (am > 0) for (let k = 0; k < 3; k++) { const ph = ((t * 0.6) + k / 3) % 1; c.strokeStyle = `rgba(255,90,120,${0.22 * am * (1 - ph)})`; c.lineWidth = 6; c.beginPath(); c.arc(LAY.pcx, LAY.pcy, LAY.sh * (0.45 + ph * 0.6), 0, 7); c.stroke(); }
 }
 function wrapLines(c, s, maxW) { const words = s.split(' '); const L = []; let cur = ''; for (const w of words) { const tst = cur ? cur + ' ' + w : w; if (c.measureText(tst).width > maxW && cur) { L.push(cur); cur = w; } else cur = tst; } if (cur) L.push(cur); return L; }
