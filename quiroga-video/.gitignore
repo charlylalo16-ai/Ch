@@ -1,0 +1,10 @@
+build/
+out/
+lab/cache/
+lab/rec1/
+lab/shots1/
+lab/tiles/
+lab/tiles.log
+lab/*.png
+lab/explore.js
+lab/probe.js
