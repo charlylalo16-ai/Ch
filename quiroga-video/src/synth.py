@@ -261,7 +261,7 @@ bass.add(bass_note(43, BAR * 1.5) * np.exp(-tt(int(BAR * 1.5 * SR)) * 1.2), T(OB
 drums.add(KBIG, T(OB + 1) - 1.6, 0.9); kick_times.append(T(OB + 1) - 1.6)
 
 # ---- interface sound design, synced to timeline.json ----
-for t0 in TL['taps']: fx.add(tap_click(), t0, 0.35, 0.1)
+for tp in TL['taps']: fx.add(tap_click(), tp[0] if isinstance(tp, list) else tp, 0.35, 0.1)
 r = np.random.default_rng(5)
 for a, b2 in TL['typing']:
     t0 = a
