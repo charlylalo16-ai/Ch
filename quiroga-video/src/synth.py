@@ -198,13 +198,12 @@ def heartbeat():
 
 CH = {'G': [55, 59, 62], 'D': [54, 57, 62], 'Em': [52, 55, 59], 'C': [52, 55, 60]}
 ROOT = {'G': 43, 'D': 38, 'Em': 40, 'C': 36}
-PROG = ['G', 'G', 'G', 'D', 'Em', 'C', 'G', 'D', 'Em', 'C', 'G', 'D', 'G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G']
-def sec(b):
-    if b <= 1: return 'intro'
-    if b <= 7: return 'light'
-    if b <= 11: return 'alert'
-    if b <= 17: return 'full'
-    return 'outro'
+OB = TL['sections'].index('outro')
+CYC = ['G', 'D', 'Em', 'C']
+PROG = [('Em', 'C', 'G', 'D')[b % 4] if TL['sections'][b] == 'alert' else CYC[b % 4] for b in range(NB)]
+PROG[0] = PROG[1] = 'G'; PROG[OB - 1] = 'D'; PROG[OB] = 'C'
+for b in range(OB + 1, NB): PROG[b] = 'G'
+def sec(b): return TL['sections'][b]
 
 KICK, KBIG, CLAP = kick(), kick(1.3, 0.5), clap()
 HAT_C, HAT_O = hat(), hat(True)
@@ -214,7 +213,7 @@ HOOK = [(0, 79, 2), (2, 81, 2), (4, 83, 3), (8, 81, 1), (9, 79, 1), (10, 78, 2),
 for b in range(NB):
     c = PROG[b]; s_ = sec(b)
     # pad
-    if s_ != 'outro' or b == 18:
+    if s_ != 'outro' or b == OB:
         p = pad(CH[c] + [CH[c][0] + 12], BAR + 0.1)
         keys.add(p, T(b), 0.55 if s_ in ('intro', 'light') else 0.75); send.add(p, T(b), 0.3)
     # arpeggio plucks
@@ -251,15 +250,15 @@ for b in range(NB):
             lead.add(chord_pluck([m]), T(b, st), 0.7, -0.1)
 
 # intro: riser into the logo hit, bells on the logo
-fx.add(riser(BAR), T(0), 0.5)
+fx.add(riser(BAR) * 0.5, T(0), 0.4)
 for m, st in ((83, 2), (86, 4), (91, 6)):
     fx.add(bell(mtof(m)), T(1, st), 0.35, 0.2); send.add(bell(mtof(m)), T(1, st), 0.35)
 # outro: final chord + bell flourish
-fin = pad(CH['G'] + [67, 71], BAR * 2); keys.add(fin * np.exp(-tt(fin.shape[1]) * 0.9), T(18), 0.9); send.add(fin, T(18), 0.4)
+fin = pad(CH['G'] + [67, 71], BAR * 3); keys.add(fin * np.exp(-tt(fin.shape[1]) * 0.6), T(OB + 1) - 1.6, 0.9); send.add(fin, T(OB + 1) - 1.6, 0.4)
 for i, m in enumerate((79, 83, 86, 91)):
-    fx.add(bell(mtof(m)), T(18, 2 + i * 1.5), 0.35, 0.3 * (i % 2 * 2 - 1)); send.add(bell(mtof(m)), T(18, 2 + i * 1.5), 0.3)
-bass.add(bass_note(43, BAR * 1.5) * np.exp(-tt(int(BAR * 1.5 * SR)) * 1.2), T(18), 0.6)
-drums.add(KBIG, T(18), 0.9); kick_times.append(T(18))
+    fx.add(bell(mtof(m)), T(OB, 4 + i * 3), 0.35, 0.3 * (i % 2 * 2 - 1)); send.add(bell(mtof(m)), T(OB, 4 + i * 3), 0.3)
+bass.add(bass_note(43, BAR * 1.5) * np.exp(-tt(int(BAR * 1.5 * SR)) * 1.2), T(OB + 1) - 1.6, 0.6)
+drums.add(KBIG, T(OB + 1) - 1.6, 0.9); kick_times.append(T(OB + 1) - 1.6)
 
 # ---- interface sound design, synced to timeline.json ----
 for t0 in TL['taps']: fx.add(tap_click(), t0, 0.35, 0.1)
@@ -302,7 +301,7 @@ wet = np.stack([conv(biquad(s2[0], 'hp', 300), IR[0]), conv(biquad(s2[1], 'hp', 
 mix = drums.st() + perc.st() * 0.9 + bass.st() * 0.85 + keys.st() * 0.8 + lead.st() * 0.7 + fx.st() * 0.9 + wet * 0.5
 pk = np.max(np.abs(mix)); mix = mix / pk * 1.5; mix = np.tanh(mix) / np.tanh(1.5); mix *= 10 ** (-1 / 20)
 fi = int(0.004 * SR); mix[:, :fi] *= np.linspace(0, 1, fi)
-fo = int(0.8 * SR); mix[:, -fo:] *= np.linspace(1, 0, fo) ** 2
+fo = int(1.5 * SR); mix[:, -fo:] *= np.linspace(1, 0, fo) ** 2
 pcm = (np.clip(mix.T, -1, 1) * (2 ** 23 - 1)).astype('<i4')
 arr = np.frombuffer(pcm.tobytes(), dtype=np.uint8).reshape(-1, 4)[:, :3]
 with wave.open(sys.argv[1], 'wb') as w:

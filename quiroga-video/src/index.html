@@ -6,6 +6,7 @@
 html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}
 </style>
 <script src="../build/assets/screens/meta.js"></script>
+<script src="timeline.js"></script>
 </head><body><canvas id="c"></canvas>
 <script>
 // ======================================================================
@@ -13,7 +14,7 @@ html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}
 //  quiroga-app) con datos de demostración. Todo lo demás se dibuja aquí.
 // ======================================================================
 const Q = new URLSearchParams(location.search), V = (Q.get('fmt') || 'v') === 'v';
-const W = V ? 1080 : 1920, H = V ? 1920 : 1080, CX = W / 2, CY = H / 2, FPS = 60, DUR = 40;
+const W = V ? 1080 : 1920, H = V ? 1920 : 1080, CX = W / 2, CY = H / 2, FPS = 60, DUR = TLD.dur;
 const C = { AZUL: '#002068', AZUL2: '#003399', AZUL3: '#001040', ROSA: '#e2007c', ROSA2: '#b50062', ROJO: '#ba1a1a', BLANCO: '#ffffff',
   AMA: '#f6a800', VERDE: '#3aa935', ROJO2: '#e30613', CELESTE: '#0077c8', TXT: '#1a1c1e' };
 const PETAL = [C.ROSA, C.AMA, C.VERDE, C.ROJO2, C.CELESTE];
@@ -46,54 +47,17 @@ const scr = n => A + 'screens/' + META[n].file;
 const spl = i => A + 'splash/s_' + String(clamp(i, 1, 184) | 0).padStart(3, '0') + '.jpg';
 function evict(keep) { const ks = Object.keys(IMG).filter(k => k.includes('/screens/') || k.includes('/splash/')); if (ks.length > 40) for (const k of ks) if (!keep.has(k)) { delete IMG[k]; delete PEND[k]; } }
 
-// ---------------------------------------------------------------- screen schedule
+// ---------------------------------------------------------------- screen schedule (src/timeline.json)
 const SB = 28;                      // status bar (css px)
 const SW = 412, SH = 892 + SB;      // phone screen in css px
-const S = [];                        // [time, name, transition, opts]
-const at = (t, n, tr = 'cut', o = {}) => S.push([t, n, tr, o]);
-const seq = (prefix, t0, t1) => { const ks = Object.keys(META).filter(k => k.startsWith(prefix)); ks.forEach((k, i) => at(lerp(t0, t1, ks.length > 1 ? i / (ks.length - 1) : 0), k, 'cut')); return ks; };
-at(4.0, 'HOME', 'none');
-at(6.0, 'SPLASH', 'open');
-at(8.0, 'login', 'fade');
-at(8.42, 'reg_empty', 'cut');
-seq('reg_nombre_', 8.7, 9.55);
-seq('reg_pass_', 9.72, 9.92); seq('reg_pass2_', 9.98, 10.15);
-seq('reg_tel_', 10.32, 10.95);
-at(11.08, 'reg_genero'); at(11.28, 'reg_localidad');
-seq('reg_dir_', 11.5, 11.65);
-at(11.72, 'reg_terminos'); at(11.9, 'reg_press'); at(12.0, 'reg_creando');
-at(12.15, 'sms_empty', 'fade');
-seq('sms_', 12.38, 13.15).length;
-at(13.38, 'sms_ok');
-at(14.0, 'inicio_0', 'up');
-at(14.9, 'inicio_220', 'scroll', { dy: 220 }); at(15.35, 'inicio_440', 'scroll', { dy: 220 });
-at(16.0, 'emerg', 'slide');
-for (let i = 1; i <= 10; i++) at(16.5 + (i - 1) * 0.2, 'hold_' + String(i).padStart(2, '0'));
-at(18.5, 'alerta_enviando', 'fade'); at(19.2, 'alerta_enviada', 'fade'); at(20.65, 'alerta_recibida', 'cut');
-at(21.95, 'alerta_asignada', 'cut'); at(23.0, 'alerta_atencion', 'cut');
-at(24.0, 'HOME_W', 'fade');
-at(26.0, 'rep_empty', 'slide'); at(26.25, 'rep_area');
-seq('rep_titulo_', 26.68, 27.35); seq('rep_desc_', 27.48, 28.1); seq('rep_ubic_', 28.28, 28.9);
-at(28.95, 'rep_listo', 'fade'); at(29.12, 'rep_enviando'); at(29.4, 'rep_ok', 'fade');
-at(30.0, 'avisos_0', 'slide'); at(31.0, 'avisos_260', 'scroll', { dy: 260 });
-at(32.0, 'camion_0', 'slide'); at(32.55, 'camion_1', 'fade'); at(33.05, 'camion_2', 'fade'); at(33.55, 'camion_3', 'fade');
-at(34.0, 'mensajes', 'slide'); at(35.0, 'chat', 'slide');
-S.sort((a, b) => a[0] - b[0]);
+const S = TLD.screens;
 const isAuth = n => /^(SPLASH|HOME|login|reg_|sms_|splash)/.test(n);
-const rectOf = (n, k) => { const r = META[n] && META[n].rects[k]; if (!r) console.log('sin rect', n, k); return r ? [r[0], r[1] + SB] : [206, 460]; };
-var HOME_ICON = [34 + 2 * 92, 420 + 2 * 104];
-
-// taps: [time, x, y (css, incl. status bar), holdUntil?]
-const TAPS = [
-  [5.5, ...HOMEPOS()], [8.35, ...rectOf('login', 'tabReg')], [8.6, ...rectOf('reg_empty', 'name')], [9.65, ...rectOf('reg_pass_03', 'field')],
-  [10.25, ...rectOf('reg_tel_02', 'field')], [11.05, ...rectOf('reg_genero', 'field')], [11.25, ...rectOf('reg_localidad', 'field')],
-  [11.45, ...rectOf('reg_dir_04', 'field')], [11.7, ...rectOf('reg_terminos', 'field')], [11.9, ...rectOf('reg_press', 'btn')],
-  [12.3, ...rectOf('sms_empty', 'field')], [13.3, ...rectOf('sms_empty', 'btn')], [16.2, ...rectOf('emerg', 'sos'), 18.5],
-  [20.6, ...rectOf('alerta_enviada', 'chip')], [25.15, 206, 330 + SB],
-  [26.2, ...rectOf('rep_empty', 'area')], [26.6, ...rectOf('rep_titulo_04', 'field')], [27.4, ...rectOf('rep_desc_12', 'field')],
-  [28.2, ...rectOf('rep_ubic_07', 'field')], [29.0, ...rectOf('rep_listo', 'btn')], [30.1, 115, 858 + SB], [32.1, 294, 858 + SB], [34.1, 376, 858 + SB], [34.9, 293, 238 + SB],
-];
-function HOMEPOS() { return [HOME_ICON[0] + 30, HOME_ICON[1] + 30]; }
+const rectOf = (n, k) => { const r = META[n] && META[n].rects[k]; return r ? [r[0], r[1] + SB] : [206, 460]; };
+var HOME_ICON = TLD.home_icon;
+const TAPS = TLD.taps;
+const T_OPEN = S.find(x => x[1] === 'SPLASH')[0];
+const T_HOMEW = S.find(x => x[1] === 'HOME_W')[0];
+const T_OUTRO = 72.5, T_INTRO = 5.0;
 
 // ---------------------------------------------------------------- Android home (drawn)
 const APPS = [['Teléfono', '#34a853', 'phone'], ['Mensajes', '#1a73e8', 'comment'], ['Cámara', '#5f6368', 'camera'], ['Galería', '#f9ab00', 'image'],
@@ -102,12 +66,11 @@ const APPS = [['Teléfono', '#34a853', 'phone'], ['Mensajes', '#1a73e8', 'commen
 function drawHome(c, t, widget) {
   const g = c.createLinearGradient(0, 0, SW, SH); g.addColorStop(0, '#001b5e'); g.addColorStop(0.55, '#3b1a7a'); g.addColorStop(1, '#b50062');
   c.fillStyle = g; c.fillRect(0, 0, SW, SH);
-  if (IMG[A + 'flores.png']) { c.save(); c.globalAlpha = 0.22; c.drawImage(IMG[A + 'flores.png'], 150, 560, 300, 228); c.restore(); }
   c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
   font(c, 76, 300); c.fillText('10:30', SW / 2, 170); font(c, 17, 600); c.fillText('lunes, 9 de noviembre', SW / 2, 202);
   font(c, 13, 600); c.globalAlpha = 0.8; c.fillText('☀  22°  Quiroga, Mich.', SW / 2, 230); c.globalAlpha = 1;
   if (widget) {
-    const wp = E.outBack(prog(t, 24.2, 24.7), 1.6);
+    const wp = E.outBack(prog(t, T_HOMEW + 0.4, T_HOMEW + 1.1), 1.4);
     c.save(); c.translate(SW / 2, 330); c.scale(wp, wp);
     c.fillStyle = 'rgba(0,0,0,0.25)'; rr(c, -170, -36, 340, 76, 16); c.fill();
     c.fillStyle = C.ROJO; rr(c, -172, -40, 344, 76, 16); c.fill();
@@ -126,7 +89,7 @@ function drawHome(c, t, widget) {
   [['#34a853', 'phone'], ['#1a73e8', 'comment'], ['#4285f4', 'search'], ['#5f6368', 'camera']].forEach(([col, ic], i) => { const x = 46 + i * 92; c.fillStyle = col; rr(c, x, SH - 106, 60, 60, 16); c.fill(); icon(c, FA[ic], x + 30, SH - 75, 26, '#fff'); });
   // long-press shortcut menu (widget scene)
   if (widget) {
-    const mp = E.outBack(prog(t, 25.1, 25.45), 1.4) * (1 - prog(t, 25.85, 26));
+    const mp = E.outBack(prog(t, T_HOMEW + 2.35, T_HOMEW + 2.8), 1.4) * (1 - prog(t, T_HOMEW + 4.6, T_HOMEW + 4.95));
     if (mp > 0) {
       const [ix, iy] = HOME_ICON;
       c.save(); c.translate(ix + 30, iy - 12); c.scale(mp, mp);
@@ -153,7 +116,7 @@ function drawShot(c, name, t, dy = 0) {
   const im = IMG[scr(name)]; if (!im) return;
   c.drawImage(im, 0, SB - dy, SW, 892);
 }
-const splashFrame = t => 1 + (0.4 + (t - 6.15) * 2.55) * 30;
+const splashFrame = t => 1 + (0.3 + (t - T_OPEN - 0.1) * 2.2) * 30;
 function statusBar(c, name) {
   const dark = !isAuth(name) || name.startsWith('reg_') || name.startsWith('sms_');
   const auth = isAuth(name) && !name.startsWith('HOME');
@@ -170,7 +133,7 @@ function drawScreen(c, t) {
   const [t0, name, tr, o] = S[i], prev = i > 0 ? S[i - 1][1] : null, lt = t - t0;
   c.save(); c.beginPath(); c.rect(0, 0, SW, SH); c.clip();
   c.fillStyle = '#f9f9fc'; c.fillRect(0, 0, SW, SH);
-  const D = { cut: 0.07, fade: 0.28, slide: 0.38, up: 0.45, scroll: 0.42, open: 0.5, none: 0 }[tr] || 0;
+  const D = { cut: 0.07, fade: 0.45, slide: 0.6, up: 0.7, scroll: 0.85, open: 0.8, none: 0 }[tr] || 0;
   const p = D ? clamp(lt / D) : 1;
   if (p < 1 && prev) {
     if (tr === 'slide') { const e = E.outExpo(p); c.save(); c.translate(-SW * 0.3 * e, 0); drawShot(c, prev, t); c.fillStyle = `rgba(0,0,0,${0.25 * e})`; c.fillRect(0, 0, SW, SH); c.restore(); c.save(); c.translate(SW * (1 - e), 0); drawShot(c, name, t); c.restore(); }
@@ -198,18 +161,16 @@ function drawScreen(c, t) {
 const LAY = V ? { pcx: 540, pcy: 1120, sh: 1250 } : { pcx: 1290, pcy: 548, sh: 900 };
 LAY.sc = LAY.sh / SH; LAY.sw = SW * LAY.sc;
 function camera(t) {
-  // zoom keyframes: [t, scale, focusX(css), focusY(css)]
-  const sos = rectOf('emerg', 'sos');
-  const K = [[15.9, 1, SW / 2, SH / 2], [16.35, 1, SW / 2, SH / 2], [16.9, V ? 1.25 : 1.3, sos[0], 0], [18.45, V ? 1.36 : 1.42, sos[0], 0],
-    [18.8, V ? 1.08 : 1.12, SW / 2, 0], [23.6, V ? 1.08 : 1.12, SW / 2, 0], [24.0, 1, SW / 2, SH / 2]];
+  const Z = { Z1: V ? 1.25 : 1.3, Z2: V ? 1.36 : 1.42, Z3: V ? 1.08 : 1.12 };
+  const K = TLD.camera.map(([tk, z, x, y]) => [tk, typeof z === 'string' ? Z[z] : z, x, y]);
   if (t <= K[0][0] || t >= K[K.length - 1][0]) return { s: 1, fx: SW / 2, fy: SH / 2 };
   let k = 0; while (K[k + 1][0] < t) k++;
   const [ta, sa, xa, ya] = K[k], [tb, sb, xb, yb] = K[k + 1], e = E.inOutC(prog(t, ta, tb));
   return { s: lerp(sa, sb, e), fx: lerp(xa, xb, e), fy: lerp(ya, yb, e) };
 }
 function phoneEnter(t) { // 0..1 entry, plus exit at outro
-  const a = E.outExpo(prog(t, 3.75, 4.6)), b = E.inExpo(prog(t, 35.85, 36.45));
-  return { y: (1 - a) * H * 0.9 + b * H * 0.9, rot: (1 - a) * 0.25 - b * 0.15, vis: a > 0 && b < 1 };
+  const a = E.outExpo(prog(t, 4.3, 5.6)), b = E.inOutC(prog(t, T_OUTRO - 0.3, T_OUTRO + 0.6));
+  return { y: (1 - a) * H * 0.9 + b * H * 1.0, rot: (1 - a) * 0.12 - b * 0.06, vis: a > 0 && b < 1 };
 }
 function drawPhone(c, t) {
   const pe = phoneEnter(t); if (!pe.vis) return;
@@ -241,8 +202,8 @@ function drawTouches(c, t) {
     const r = 26 * appear * (1 - 0.15 * prog(t, t0, t0 + 0.06)) * (1 - release);
     if (r > 0.5) { c.fillStyle = `rgba(255,255,255,${0.55 * (1 - release)})`; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.strokeStyle = `rgba(226,0,124,${0.9 * (1 - release)})`; c.lineWidth = 3; c.stroke(); }
     if (lt > 0 && lt < 0.6 && !hold) { const e = E.outC(lt / 0.6); c.strokeStyle = `rgba(226,0,124,${0.7 * (1 - e)})`; c.lineWidth = 4 * (1 - e) + 1; c.beginPath(); c.arc(x, y, 26 + 50 * e, 0, 7); c.stroke(); }
-    if (hold && t >= 16.5 && t <= hold + 0.3) {
-      const hp = clamp((t - 16.5) / (hold - 16.5));
+    if (hold && t >= t0 + 0.5 && t <= hold + 0.3) {
+      const hp = clamp((t - t0 - 0.5) / (hold - t0 - 0.5));
       c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 7; c.beginPath(); c.arc(x, y, 44, 0, 7); c.stroke();
       c.strokeStyle = C.ROSA; c.lineCap = 'round'; c.beginPath(); c.arc(x, y, 44, -Math.PI / 2, -Math.PI / 2 + hp * Math.PI * 2); c.stroke(); c.lineCap = 'butt';
       const pulse = (t * 2.2) % 1; c.strokeStyle = `rgba(186,26,26,${0.6 * (1 - pulse)})`; c.lineWidth = 3; c.beginPath(); c.arc(x, y, 50 + pulse * 70, 0, 7); c.stroke();
@@ -250,59 +211,97 @@ function drawTouches(c, t) {
   }
 }
 
+// ---------------------------------------------------------------- otomí motifs (vector, drawn in code)
+function petalShape(c, s) { c.beginPath(); c.moveTo(0, 0); c.bezierCurveTo(s * 0.55, -s * 0.25, s * 0.45, -s * 0.95, 0, -s); c.bezierCurveTo(-s * 0.45, -s * 0.95, -s * 0.55, -s * 0.25, 0, 0); c.closePath(); }
+function flower(c, x, y, s, col, col2, open = 1, rot = 0, n = 8) {
+  if (open <= 0) return;
+  c.save(); c.translate(x, y); c.rotate(rot + (1 - open) * 0.8);
+  for (let i = 0; i < n; i++) { c.save(); c.rotate(i / n * Math.PI * 2); c.scale(open, open); petalShape(c, s); c.fillStyle = col; c.fill(); c.restore(); }
+  c.fillStyle = col2; c.beginPath(); c.arc(0, 0, s * 0.32 * open, 0, 7); c.fill();
+  c.fillStyle = col; c.beginPath(); c.arc(0, 0, s * 0.13 * open, 0, 7); c.fill();
+  c.restore();
+}
+function leaf(c, x, y, s, rot, col, g = 1) { if (g <= 0) return; c.save(); c.translate(x, y); c.rotate(rot); c.scale(g, g); petalShape(c, s); c.fillStyle = col; c.fill(); c.restore(); }
+function swirl(c, x, y, r, rot, col, g = 1, w = 4) {
+  if (g <= 0) return; c.save(); c.translate(x, y); c.rotate(rot); c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.beginPath();
+  const turns = 1.6 * g; for (let a = 0; a <= turns * Math.PI * 2; a += 0.12) { const rr2 = r * (1 - a / (Math.PI * 2 * 2)); const px = Math.cos(a) * rr2, py = Math.sin(a) * rr2; a ? c.lineTo(px, py) : c.moveTo(px, py); }
+  c.stroke(); if (g > 0.95) { c.fillStyle = col; c.beginPath(); c.arc(r * 0.18, 0, w * 1.2, 0, 7); c.fill(); } c.restore();
+}
+// tone-on-tone pattern tile (like the Ayuntamiento backgrounds)
+const PAT = (() => {
+  const T = 300, cv2 = mk(T * 2, T * 2), x = cv2.getContext('2d'), col = 'rgba(255,255,255,0.055)';
+  const motif = (ox, oy) => {
+    flower(x, ox + 150, oy + 140, 46, col, 'rgba(255,255,255,0.03)', 1, 0.2);
+    for (const [dx, dy, r] of [[60, 230, -2.2], [240, 230, 2.2], [95, 60, -0.7], [205, 60, 0.7], [150, 262, 3.14]]) leaf(x, ox + dx, oy + dy, 42, r, col);
+    swirl(x, ox + 40, oy + 140, 34, 0, col, 1, 5); swirl(x, ox + 260, oy + 140, 34, Math.PI, col, 1, 5);
+    flower(x, ox + 30, oy + 30, 16, col, col, 1, 0, 6); flower(x, ox + 270, oy + 270, 16, col, col, 1, 0, 6);
+  };
+  motif(0, 0); motif(T, 0); motif(-T / 2, T); motif(T / 2, T); motif(T * 1.5, T);
+  return cv2;
+})();
+let PATTERN = null;
+// garlands of colorful flowers that GROW (no explosion): [x,y (0..1), scale, delay, kind]
+const GARLAND = (() => {
+  // ornamental corner bouquets: stems curve out of each corner, flowers/leaves/swirls along them
+  const L = [], r = (i) => hash(i * 31 + 7), K = V ? 1.15 : 1;
+  [[0, 0], [1, 1], [1, 0], [0, 1]].forEach(([cx0, cy0], ci) => {
+    const sx = cx0 ? -1 : 1, sy = cy0 ? -1 : 1, ox = cx0 * W, oy = cy0 * H;
+    for (let st = 0; st < 3; st++) {
+      const base = (st - 1) * 0.42 + Math.PI / 4, len = (300 + 120 * r(ci * 9 + st)) * K;
+      for (let k = 1; k <= 6; k++) {
+        const u = k / 6, ang = base + Math.sin(u * 3) * 0.25, rad = len * u;
+        const x = ox + sx * Math.cos(ang) * rad, y = oy + sy * Math.sin(ang) * rad, id = ci * 50 + st * 10 + k;
+        const kind = k === 6 || (k === 3 && st === 1) ? 0 : (k % 2 ? 1 : 2);
+        L.push({ x, y, s: (kind === 0 ? 34 + 26 * r(id) : 22 + 14 * r(id)) * K * (1.15 - u * 0.3), d: ci * 0.12 + st * 0.18 + u * 0.9, kind, col: PETAL[(ci * 3 + st + k) % 5], rot: Math.atan2(sy * Math.sin(ang), sx * Math.cos(ang)) + (k % 2 ? 0.9 : -0.9) });
+      }
+    }
+  });
+  return L;
+})();
+function drawGarland(c, lt, amt = 1) {
+  for (const g of GARLAND) {
+    const e = E.outC(prog(lt, g.d, g.d + 1.6)) * amt; if (e <= 0) continue;
+    const sway = Math.sin(lt * 0.8 + g.rot) * 0.06;
+    if (g.kind === 0) flower(c, g.x, g.y, g.s, g.col, C.AMA === g.col ? C.ROJO2 : C.AMA, e, g.rot + sway);
+    else if (g.kind === 1) leaf(c, g.x, g.y, g.s * 1.3, g.rot + sway, C.VERDE, e);
+    else swirl(c, g.x, g.y, g.s * 1.1, g.rot + sway, C.AMA, e, 5);
+  }
+}
+
 // ---------------------------------------------------------------- background & captions
-const CAPS = [
-  [8.0, 14.0, '1', 'Regístrate en un minuto', ['Solo para gente de Quiroga y sus localidades', 'Verificación segura por SMS']],
-  [14.0, 16.0, '2', 'Tu municipio en un solo lugar', ['Avisos, reportes, emergencias y más']],
-  [16.0, 24.0, '3', 'ALERTA MUJER', ['Mantén presionado 2 segundos', 'Tu ubicación se envía al instante', 'Seguridad Pública atiende tu alerta']],
-  [24.0, 26.0, '3', 'ALERTA MUJER', ['También desde el widget o el acceso directo']],
-  [26.0, 30.0, '4', 'Reporta en segundos', ['Baches, fugas, luminarias, basura…']],
-  [30.0, 32.0, '5', 'Avisos oficiales', ['Entérate primero de lo que pasa en Quiroga']],
-  [32.0, 34.0, '6', 'Camión de basura', ['Ubicación en tiempo real']],
-  [34.0, 36.0, '7', 'Habla con cada área', ['Mensajes directos con el Ayuntamiento']],
-];
-const SUBT = { 16: [16.0, 18.5, 24.0], 8: [8.0, 12.15, 14.0] };
-function alertMix(t) { return prog(t, 16.0, 16.6) * (1 - prog(t, 23.6, 24.2)); }
+function alertMix(t) { const a = TLD.caps[3]; return prog(t, a[0], a[0] + 0.8) * (1 - prog(t, a[1] - 0.6, a[1] + 0.2)); }
 function drawBG(c, t) {
   const am = alertMix(t);
-  const g = c.createRadialGradient(LAY.pcx, LAY.pcy - H * 0.1, 50, LAY.pcx, LAY.pcy, Math.hypot(W, H) * 0.7);
   const mixc = (a, b, k) => `rgb(${a.map((v, i) => Math.round(lerp(v, b[i], k))).join(',')})`;
-  g.addColorStop(0, mixc([20, 60, 170], [150, 20, 60], am)); g.addColorStop(0.55, mixc([0, 32, 104], [90, 0, 30], am)); g.addColorStop(1, mixc([0, 16, 64], [40, 0, 14], am));
+  const g = c.createRadialGradient(CX, CY, 50, CX, CY, Math.hypot(W, H) * 0.7);
+  g.addColorStop(0, mixc([22, 52, 130], [130, 18, 52], am)); g.addColorStop(1, mixc([11, 34, 94], [70, 6, 28], am));
   c.fillStyle = g; c.fillRect(0, 0, W, H);
-  // drifting otomí petals
-  for (let i = 0; i < 26; i++) {
-    const r1 = hash(i * 7 + 1), r2 = hash(i * 13 + 5), r3 = hash(i * 17 + 9);
-    const x = ((r1 * W + t * (12 + r2 * 20)) % (W + 200)) - 100, y = ((r2 * H - t * (18 + r3 * 26)) % (H + 200) + H + 200) % (H + 200) - 100;
-    petal(c, x, y, 10 + r3 * 18, t * (0.3 + r1) + i, PETAL[i % 5], 0.16 + 0.1 * r2);
-  }
-  // alert pulse rings behind the phone
-  if (am > 0) for (let k = 0; k < 3; k++) { const ph = ((t * 0.9) + k / 3) % 1; c.strokeStyle = `rgba(255,80,110,${0.25 * am * (1 - ph)})`; c.lineWidth = 6; c.beginPath(); c.arc(LAY.pcx, LAY.pcy, LAY.sh * (0.45 + ph * 0.6), 0, 7); c.stroke(); }
+  if (!PATTERN) PATTERN = c.createPattern(PAT, 'repeat');
+  c.save(); c.translate(-(t * 6) % 600, -(t * 3) % 600); c.fillStyle = PATTERN; c.fillRect(0, 0, W + 600, H + 600); c.restore();
+  if (am > 0) for (let k = 0; k < 3; k++) { const ph = ((t * 0.6) + k / 3) % 1; c.strokeStyle = `rgba(255,90,120,${0.22 * am * (1 - ph)})`; c.lineWidth = 6; c.beginPath(); c.arc(LAY.pcx, LAY.pcy, LAY.sh * (0.45 + ph * 0.6), 0, 7); c.stroke(); }
 }
-function petal(c, x, y, s, rot, col, a) { c.save(); c.translate(x, y); c.rotate(rot); c.globalAlpha = a; c.fillStyle = col; c.beginPath(); c.moveTo(0, -s); c.quadraticCurveTo(s * 0.8, -s * 0.2, 0, s); c.quadraticCurveTo(-s * 0.8, -s * 0.2, 0, -s); c.fill(); c.restore(); }
 function wrapLines(c, s, maxW) { const words = s.split(' '); const L = []; let cur = ''; for (const w of words) { const tst = cur ? cur + ' ' + w : w; if (c.measureText(tst).width > maxW && cur) { L.push(cur); cur = w; } else cur = tst; } if (cur) L.push(cur); return L; }
 function drawCaption(c, t) {
-  const cap = CAPS.find(k => t >= k[0] && t < k[1]); if (!cap) return;
-  const [a, b, num, title, subs] = cap, lt = t - a;
-  const inp = E.outExpo(prog(t, a, a + 0.5)), outp = prog(t, b - 0.25, b);
-  const same = CAPS.find(k => k[1] === a && k[3] === title);
-  const ttl = same ? 1 : inp;
-  // which subtitle
-  let si = 0; if (subs.length > 1) { const span = (b - a) / subs.length; si = Math.min(subs.length - 1, Math.floor(lt / span)); if (title === 'ALERTA MUJER' && a === 16.0) si = t < 18.5 ? 0 : t < 20.5 ? 1 : 2; }
-  const sStart = title === 'ALERTA MUJER' && a === 16.0 ? [16.0, 18.5, 20.5][si] : a + si * (b - a) / subs.length;
-  const sp = E.outExpo(prog(t, sStart + 0.05, sStart + 0.45));
+  const cap = TLD.caps.find(k => t >= k[0] && t < k[1]); if (!cap) return;
+  const [a, b, num, title, subs] = cap;
+  const prevSame = TLD.caps.find(k => k[1] === a && k[3] === title);
+  const ttl = prevSame ? 1 : E.outExpo(prog(t, a + 0.1, a + 0.9));
+  const nextSame = TLD.caps.find(k => k[0] === b && k[3] === title);
+  const outp = nextSame ? 0 : prog(t, b - 0.4, b);
+  let si = 0; subs.forEach(([, st], i) => { if (t >= st) si = i; });
+  const sStart = subs[si][1], sp = E.outExpo(prog(t, sStart + 0.2, sStart + 0.9)), sOut = si < subs.length - 1 ? prog(t, subs[si + 1][1] - 0.25, subs[si + 1][1]) : 0;
   const isAlert = title === 'ALERTA MUJER';
   c.save(); c.globalAlpha = 1 - outp;
   if (V) {
     const y0 = 290;
-    // badge
     c.save(); c.translate(CX, y0 - 70); c.scale(ttl, ttl);
     c.fillStyle = isAlert ? C.ROJO : C.ROSA; c.beginPath(); c.arc(0, 0, 34, 0, 7); c.fill();
     if (isAlert) icon(c, FA.tri, 0, 1, 30, '#fff'); else { font(c, 38, 800); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(num, 0, 2); }
     c.restore();
-    font(c, isAlert ? 84 : 64, 800); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillStyle = '#fff';
+    font(c, isAlert ? 84 : 66, 800); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillStyle = '#fff';
     c.save(); c.beginPath(); c.rect(0, y0 - 10, W, 120); c.clip(); c.fillText(title, CX, y0 + 70 + (1 - ttl) * 110); c.restore();
-    font(c, 36, 600); c.fillStyle = isAlert ? '#ffd0dc' : '#ffd9e9';
-    c.globalAlpha = (1 - outp) * sp; c.fillText(subs[si], CX, y0 + 132 + (1 - sp) * 20);
+    font(c, 38, 600); c.fillStyle = isAlert ? '#ffd0dc' : '#ffd9e9';
+    c.globalAlpha = (1 - outp) * sp * (1 - sOut); c.fillText(subs[si][0], CX, y0 + 134 + (1 - sp) * 20);
   } else {
     const x0 = 150, y0 = 430;
     c.save(); c.translate(x0 + 34, y0 - 165); c.scale(ttl, ttl);
@@ -310,89 +309,72 @@ function drawCaption(c, t) {
     if (isAlert) icon(c, FA.tri, 0, 1, 30, '#fff'); else { font(c, 38, 800); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(num, 0, 2); }
     c.restore();
     font(c, isAlert ? 104 : 80, 800); c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillStyle = '#fff';
-    const L = wrapLines(c, title, 800);
-    c.save(); c.beginPath(); c.rect(0, y0 - 70, W * 0.6, L.length * 100 + 40); c.clip();
-    L.forEach((ln, i) => c.fillText(ln, x0, y0 + 20 + i * (isAlert ? 110 : 90) + (1 - ttl) * 140)); c.restore();
-    font(c, 40, 600); c.fillStyle = isAlert ? '#ffd0dc' : '#ffd9e9'; c.globalAlpha = (1 - outp) * sp;
-    const yy = y0 + 20 + L.length * (isAlert ? 110 : 90) + 20;
-    wrapLines(c, subs[si], 760).forEach((ln, i) => c.fillText(ln, x0, yy + i * 52 + (1 - sp) * 20));
-    // accent bar
+    const L = wrapLines(c, title, 800), lh = isAlert ? 110 : 90;
+    c.save(); c.beginPath(); c.rect(0, y0 - 70, W * 0.6, L.length * lh + 40); c.clip();
+    L.forEach((ln, i) => c.fillText(ln, x0, y0 + 20 + i * lh + (1 - ttl) * 140)); c.restore();
+    font(c, 40, 600); c.fillStyle = isAlert ? '#ffd0dc' : '#ffd9e9'; c.globalAlpha = (1 - outp) * sp * (1 - sOut);
+    const yy = y0 + 20 + L.length * lh + 20;
+    wrapLines(c, subs[si][0], 760).forEach((ln, i) => c.fillText(ln, x0, yy + i * 52 + (1 - sp) * 20));
     c.globalAlpha = 1 - outp; c.fillStyle = isAlert ? '#ff5c7a' : C.ROSA; c.fillRect(x0, y0 - 108, 120 * ttl, 8);
   }
   c.restore();
-  // small brand mark
-  const lg = IMG[A + 'logo-color.png']; if (lg) { c.save(); c.globalAlpha = 0.95 * prog(t, 4.2, 4.8) * (1 - prog(t, 35.7, 36)); const hh = V ? 70 : 80, ww = hh * lg.width / lg.height;
-    c.fillStyle = 'rgba(255,255,255,0.95)'; const bx = V ? CX - ww / 2 - 18 : 150 - 18, by = V ? 40 : 60; rr(c, bx, by, ww + 36, hh + 20, 18); c.fill(); c.drawImage(lg, bx + 18, by + 10, ww, hh); c.restore(); }
+}
+function brandMark(c, t) {
+  const lg = IMG[A + 'logo-blanco.png']; if (!lg) return;
+  const a = prog(t, T_INTRO + 0.2, T_INTRO + 1.0) * (1 - prog(t, T_OUTRO - 0.4, T_OUTRO)); if (a <= 0) return;
+  const hh = V ? 78 : 96, ww = hh * lg.width / lg.height;
+  c.save(); c.globalAlpha = a; c.drawImage(lg, V ? CX - ww / 2 : 140, V ? 46 : 64, ww, hh); c.restore();
 }
 
-// ---------------------------------------------------------------- intro & outro (white, Ayuntamiento style)
-const BURST = Array.from({ length: 70 }, (_, i) => [hash(i * 3 + 1) * Math.PI * 2, 0.35 + hash(i * 5 + 2) * 0.75, 14 + hash(i * 7 + 3) * 26, i % 5, hash(i * 11 + 4)]);
-function drawWhite(c, t, t0, kind) {
-  c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
-  // corner bands
-  c.fillStyle = C.AZUL; c.beginPath(); c.moveTo(0, H); c.lineTo(0, H * 0.82); c.quadraticCurveTo(W * 0.35, H * 0.9, W * 0.55, H); c.fill();
-  c.fillStyle = C.ROSA; c.beginPath(); c.moveTo(W, 0); c.lineTo(W, H * 0.14); c.quadraticCurveTo(W * 0.7, H * 0.08, W * 0.55, 0); c.fill();
-  const lt = t - t0, R = Math.hypot(W, H) * 0.55;
-  for (const [a, d, s, ci, k] of BURST) {
-    const e = E.outExpo(prog(lt, 0.15 + k * 0.4, 1.3 + k * 0.4)); if (e <= 0) continue;
-    const rr2 = R * d * e, x = CX + Math.cos(a + lt * 0.15) * rr2, y = CY + Math.sin(a + lt * 0.15) * rr2 * (V ? 1.2 : 0.75);
-    petal(c, x, y, s, a + lt * (k - 0.5) * 2, PETAL[ci], 0.85 * (1 - 0.6 * prog(lt, 2.5, 3.5)));
-  }
-  const lg = IMG[A + 'logo-color.png'];
-  if (kind === 'intro') {
-    const lp = E.outElastic(prog(t, 1.9, 2.8));
-    if (lg && lp > 0) { const w = V ? 920 : 1100, h = w * lg.height / lg.width; c.save(); c.translate(CX, V ? CY - 230 : CY - 120); c.scale(lp, lp); c.drawImage(lg, -w / 2, -h / 2, w, h); c.restore(); }
-    const tp = E.outExpo(prog(t, 2.6, 3.1));
-    if (tp > 0) {
-      c.save(); c.globalAlpha = tp; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
-      font(c, V ? 92 : 86, 800); c.fillStyle = C.AZUL; c.fillText('Quiroga Digital', CX, (V ? CY + 170 : CY + 250) + (1 - tp) * 40);
-      font(c, V ? 40 : 40, 600); c.fillStyle = C.ROSA; c.fillText('La app de tu municipio', CX, (V ? CY + 240 : CY + 312) + (1 - tp) * 40); c.restore();
-    }
-    const fl = Math.exp(-Math.max(0, t - 2.0) * 9) * (t >= 2.0 ? 0.7 : 0); if (fl > 0.01) { c.fillStyle = `rgba(226,0,124,${fl * 0.35})`; c.fillRect(0, 0, W, H); }
-  } else {
-    const lp = E.outElastic(prog(t, 36.25, 37.0));
-    if (lg && lp > 0) { const w = V ? 760 : 820, h = w * lg.height / lg.width; c.save(); c.translate(CX, V ? 430 : 270); c.scale(lp, lp); c.drawImage(lg, -w / 2, -h / 2, w, h); c.restore(); }
-    const ip = E.outBack(prog(t, 36.6, 37.1), 1.8), ic = IMG[A + 'icon.png'];
-    const iy = V ? 900 : 560;
-    if (ic && ip > 0) { c.save(); c.translate(V ? CX : CX - 430, iy); c.scale(ip, ip); c.shadowColor = 'rgba(0,32,104,0.35)'; c.shadowBlur = 40; c.shadowOffsetY = 16; rr(c, -110, -110, 220, 220, 52); c.save(); c.clip(); c.drawImage(ic, -120, -120, 240, 240); c.restore(); c.restore(); }
-    const tp = E.outExpo(prog(t, 36.9, 37.4));
-    c.save(); c.globalAlpha = tp; c.textAlign = V ? 'center' : 'left'; c.textBaseline = 'alphabetic';
-    const tx = V ? CX : CX - 280;
-    font(c, V ? 96 : 92, 800); c.fillStyle = C.AZUL; c.fillText('Quiroga Digital', tx, (V ? 1110 : 545) + (1 - tp) * 30);
-    font(c, V ? 44 : 44, 600); c.fillStyle = C.ROSA; c.fillText('Tu municipio en tu celular', tx, (V ? 1180 : 610) + (1 - tp) * 30);
-    c.restore();
-    const feats = [[FA.tri, 'Alerta Mujer', C.ROJO], [FA.flag, 'Reportes', C.AZUL2], [FA.bullhorn, 'Avisos', C.ROSA], [FA.truck, 'Camión', '#7a4f00'], [FA.comments, 'Mensajes', C.AZUL]];
-    feats.forEach(([ic2, lab, col], i) => {
-      const fp = E.outBack(prog(t, 37.3 + i * 0.12, 37.7 + i * 0.12), 2); if (fp <= 0) return;
-      const fx = V ? CX + (i - 2) * 196 : CX - 280 + i * 200 + 60, fy = V ? 1400 : 760;
-      c.save(); c.translate(fx, fy); c.scale(fp, fp);
-      c.fillStyle = col; c.beginPath(); c.arc(0, 0, 56, 0, 7); c.fill(); icon(c, ic2, 0, 2, 44, '#fff');
-      font(c, 28, 700); c.fillStyle = C.TXT; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(lab, 0, 100); c.restore();
-    });
-    const pp = E.outBack(prog(t, 38.1, 38.5), 2);
-    if (pp > 0) { c.save(); c.translate(CX, V ? 1640 : 940); c.scale(pp, pp); font(c, 46, 800); const tw = c.measureText('¡Muy pronto en tu celular!').width; c.fillStyle = C.ROSA; rr(c, -tw / 2 - 44, -46, tw + 88, 92, 46); c.fill(); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('¡Muy pronto en tu celular!', 0, 3); c.restore(); }
-  }
+// ---------------------------------------------------------------- intro & outro (blue + otomí, flowers grow)
+function drawIntro(c, t) {
+  const lg = IMG[A + 'logo-blanco.png'];
+  const leave = E.inOutC(prog(t, 4.2, 5.0));
+  c.save(); c.globalAlpha = 1 - leave;
+  const lp = E.outC(prog(t, 1.3, 2.6));
+  if (lg && lp > 0) { const w = V ? 900 : 1080, h = w * lg.height / lg.width; c.save(); c.globalAlpha = lp * (1 - leave); c.translate(CX, (V ? CY - 200 : CY - 110) + (1 - lp) * 40 - leave * 120); c.scale(0.94 + 0.06 * lp, 0.94 + 0.06 * lp); c.drawImage(lg, -w / 2, -h / 2, w, h); c.restore(); }
+  const tp = E.outC(prog(t, 2.6, 3.4));
+  if (tp > 0) { c.save(); c.globalAlpha = tp * (1 - leave); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    font(c, V ? 92 : 86, 800); c.fillStyle = '#fff'; c.fillText('Quiroga Digital', CX, (V ? CY + 210 : CY + 260) + (1 - tp) * 30);
+    font(c, 42, 600); c.fillStyle = '#ffb3d9'; c.fillText('La app de tu municipio', CX, (V ? CY + 280 : CY + 325) + (1 - tp) * 30); c.restore(); }
+  c.restore();
+}
+function drawOutro(c, t) {
+  const lt = t - T_OUTRO, lg = IMG[A + 'logo-blanco.png'], ic = IMG[A + 'icon.png'];
+  const lp = E.outC(prog(lt, 0.5, 1.6));
+  if (lg && lp > 0) { const w = V ? 760 : 760, h = w * lg.height / lg.width; c.save(); c.globalAlpha = lp; c.translate(CX, (V ? 470 : 250) + (1 - lp) * 40); c.drawImage(lg, -w / 2, -h / 2, w, h); c.restore(); }
+  const ip = E.outC(prog(lt, 1.4, 2.3)), iy = V ? 930 : 560;
+  if (ic && ip > 0) { c.save(); c.globalAlpha = ip; c.translate(V ? CX : CX - 430, iy + (1 - ip) * 30); c.shadowColor = 'rgba(0,0,0,0.4)'; c.shadowBlur = 40; c.shadowOffsetY = 16; rr(c, -110, -110, 220, 220, 52); c.save(); c.clip(); c.drawImage(ic, -120, -120, 240, 240); c.restore(); c.restore(); }
+  const tp = E.outC(prog(lt, 1.9, 2.8));
+  c.save(); c.globalAlpha = tp; c.textAlign = V ? 'center' : 'left'; c.textBaseline = 'alphabetic';
+  const tx = V ? CX : CX - 280;
+  font(c, V ? 96 : 92, 800); c.fillStyle = '#fff'; c.fillText('Quiroga Digital', tx, (V ? 1140 : 545) + (1 - tp) * 30);
+  font(c, 44, 600); c.fillStyle = '#ffb3d9'; c.fillText('Tu municipio en tu celular', tx, (V ? 1210 : 610) + (1 - tp) * 30);
+  c.restore();
+  const feats = [[FA.tri, 'Alerta Mujer', C.ROJO], [FA.flag, 'Reportes', C.AZUL2], [FA.bullhorn, 'Avisos', C.ROSA], [FA.truck, 'Camión', '#a86a00'], [FA.comments, 'Mensajes', C.CELESTE]];
+  feats.forEach(([ic2, lab, col], i) => {
+    const fp = E.outC(prog(lt, 2.8 + i * 0.25, 3.5 + i * 0.25)); if (fp <= 0) return;
+    const fx = V ? CX + (i - 2) * 196 : CX - 280 + i * 200 + 60, fy = (V ? 1430 : 760) + (1 - fp) * 30;
+    c.save(); c.globalAlpha = fp; c.translate(fx, fy);
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, 58, 0, 7); c.fill(); c.fillStyle = col; c.beginPath(); c.arc(0, 0, 50, 0, 7); c.fill(); icon(c, ic2, 0, 2, 42, '#fff');
+    font(c, 28, 700); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(lab, 0, 102); c.restore();
+  });
+  const pp = E.outC(prog(lt, 4.4, 5.1));
+  if (pp > 0) { c.save(); c.globalAlpha = pp; c.translate(CX, (V ? 1660 : 945) + (1 - pp) * 20); font(c, 46, 800); const tw = c.measureText('¡Muy pronto en tu celular!').width; c.fillStyle = C.ROSA; rr(c, -tw / 2 - 44, -46, tw + 88, 92, 46); c.fill(); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('¡Muy pronto en tu celular!', 0, 3); c.restore(); }
 }
 
 // ---------------------------------------------------------------- frame
 function drawFrame(c, t) {
   c.save();
-  if (t < 4.0) {
-    drawBG(c, t);
-    const wipe = E.inOutC(prog(t, 3.45, 4.0));
-    c.save(); if (wipe > 0) { c.beginPath(); c.rect(0, 0, W, H); c.arc(LAY.pcx, LAY.pcy, Math.hypot(W, H) * wipe, 0, 7, true); c.clip(); } drawWhite(c, t, 0, 'intro'); c.restore();
-    drawPhone(c, t);
-  } else if (t < 36.0) {
-    drawBG(c, t); drawCaption(c, t); drawPhone(c, t);
-  } else {
-    drawBG(c, t); drawPhone(c, t);
-    const wipe = E.inOutC(prog(t, 36.0, 36.55));
-    c.save(); c.beginPath(); c.arc(CX, V ? 1000 : CY, Math.hypot(W, H) * wipe, 0, 7); c.clip(); drawWhite(c, t, 36.0, 'outro'); c.restore();
-  }
+  drawBG(c, t);
+  if (t < T_INTRO) drawIntro(c, t);
+  if (t >= T_INTRO - 0.5 && t < T_OUTRO) { drawCaption(c, t); brandMark(c, t); }
+  drawPhone(c, t);
+  if (t >= T_OUTRO - 0.2) drawOutro(c, t);
   c.restore();
 }
 function needed(t) {
-  const L = [A + 'logo-color.png', A + 'icon.png', A + 'flores.png'];
+  const L = [A + 'logo-blanco.png', A + 'icon.png', A + 'flores.png'];
   const i = idxAt(t);
   for (const k of [i, i - 1]) if (k >= 0) { const n = S[k][1]; if (n === 'SPLASH') { L.push(scr('splash'), spl(splashFrame(t))); } else if (META[n]) L.push(scr(n)); }
   return L;
@@ -404,8 +386,8 @@ async function renderFrame(f) {
   await Promise.all([...keep].map(load)); evict(keep);
   for (let i = 0; i < n; i++) { sc.setTransform(1, 0, 0, 1, 0, 0); sc.globalAlpha = 1; drawFrame(sc, ts[i]); acc.globalAlpha = 1 / (i + 1); acc.drawImage(sceneCv, 0, 0); }
   acc.globalAlpha = 1; out.drawImage(accCv, 0, 0);
-  const fo = prog(t, DUR - 0.5, DUR - 0.02); if (fo > 0) { out.fillStyle = `rgba(255,255,255,${fo})`; out.fillRect(0, 0, W, H); }
+  const fo = prog(t, DUR - 0.6, DUR - 0.02); if (fo > 0) { out.fillStyle = `rgba(8,24,70,${fo})`; out.fillRect(0, 0, W, H); }
 }
 window.renderFrame = renderFrame; window.NFRAMES = DUR * FPS;
-window.ready = (async () => { await document.fonts.load('800 40px Jak'); await document.fonts.load('900 20px FA'); await document.fonts.ready; await Promise.all([A + 'logo-color.png', A + 'icon.png', A + 'flores.png'].map(load)); return true; })();
+window.ready = (async () => { await document.fonts.load('800 40px Jak'); await document.fonts.load('900 20px FA'); await document.fonts.ready; await Promise.all([A + 'logo-blanco.png', A + 'icon.png', A + 'flores.png'].map(load)); return true; })();
 </script></body></html>
