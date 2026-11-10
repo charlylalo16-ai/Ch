@@ -1,0 +1,82 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Quiroga Digital · Próximamente</title>
+<style>
+@font-face{font-family:'Jak';src:url('../build/assets/jakarta.woff2');font-weight:200 800}
+@font-face{font-family:'FA';src:url('../build/assets/fa-solid.woff2');font-weight:900}
+html,body{margin:0;background:#000}canvas{display:block}
+</style></head><body><canvas id="c"></canvas>
+<script>
+// Imágenes "Próximamente" para redes. Pantallas = capturas reales de la app (datos de demostración).
+const Q = new URLSearchParams(location.search);
+const FMT = Q.get('fmt') || 'post', PIECE = +(Q.get('p') || 0);
+const W = 1080, H = FMT === 'story' ? 1920 : 1350, ST = FMT === 'story';
+const C = { AZUL: '#002068', AZUL2: '#003399', ROSA: '#e2007c', ROJO: '#ba1a1a', TXT: '#1a1c1e', GRIS: '#5b5d6b' };
+const A = '../build/assets/';
+const PIECES = [
+  { scr: '040_inicio_0', ic: '', col: C.AZUL, kick: 'ALGO NUEVO LLEGA A QUIROGA', title: ['Tu municipio', 'en tu celular'], sub: 'Avisos, reportes, emergencias y más, en una sola app.' },
+  { scr: '044_emerg', ic: '', col: C.ROJO, kick: 'ALERTA MUJER', title: ['Ayuda con', 'un solo botón'], sub: 'Mantén presionado 2 segundos y tu ubicación llega a Seguridad Pública.' },
+  { scr: '067_rep_titulo_22', ic: '', col: C.AZUL2, kick: 'REPORTES', title: ['Reporta en', 'segundos'], sub: 'Baches, fugas, luminarias o basura, directo al área que lo atiende.' },
+  { scr: '081_avisos_0', ic: '', col: C.ROSA, kick: 'AVISOS OFICIALES', title: ['Entérate', 'primero'], sub: 'Todo lo que pasa en Quiroga, de fuente oficial.' },
+  { scr: '086_camion_3', ic: '', col: '#a86a00', kick: 'CAMIÓN DE BASURA', title: ['¿Por dónde', 'viene?'], sub: 'Mira la ubicación del camión en tiempo real.' },
+  { scr: '088_chat', ic: '', col: '#0077c8', kick: 'MENSAJES', title: ['Habla con', 'cada área'], sub: 'Escríbele directo al Ayuntamiento desde tu celular.' },
+];
+const P = PIECES[PIECE];
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
+function rr(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+const font = (s, w = 800) => c.font = `${w} ${s}px Jak`;
+const load = s => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = s; });
+
+function phone(img, cx, cy, sh, rot) {
+  const SW = 412, SB = 28, SH = 892 + SB, s = sh / SH;
+  c.save(); c.translate(cx, cy); c.rotate(rot); c.scale(s, s);
+  const bz = 13, R = 52;
+  c.shadowColor = 'rgba(0,32,104,0.35)'; c.shadowBlur = 70; c.shadowOffsetY = 30;
+  c.fillStyle = '#0d0d12'; rr(-SW / 2 - bz, -SH / 2 - bz, SW + bz * 2, SH + bz * 2, R + bz); c.fill(); c.shadowColor = 'transparent';
+  c.save(); rr(-SW / 2, -SH / 2, SW, SH, R); c.clip();
+  c.fillStyle = '#fff'; c.fillRect(-SW / 2, -SH / 2, SW, SH);
+  c.drawImage(img, -SW / 2, -SH / 2 + SB, SW, 892);
+  font(13, 700); c.fillStyle = C.TXT; c.textBaseline = 'middle'; c.fillText('10:30', -SW / 2 + 22, -SH / 2 + SB / 2 + 1);
+  c.restore();
+  c.fillStyle = '#05050a'; c.beginPath(); c.arc(0, -SH / 2 + SB / 2, 7, 0, 7); c.fill();
+  c.restore();
+}
+
+(async () => {
+  await document.fonts.load('800 40px Jak'); await document.fonts.load('900 20px FA');
+  const [logo, icon, scr] = await Promise.all([load(A + 'logo-color.png'), load(A + 'icon.png'), load(A + 'screens/' + P.scr + '.png')]);
+  // fondo blanco con franjas institucionales (como el video)
+  c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+  c.fillStyle = C.ROSA; c.beginPath(); c.moveTo(W, 0); c.lineTo(W, H * 0.12); c.quadraticCurveTo(W * 0.7, H * 0.06, W * 0.5, 0); c.fill();
+  c.fillStyle = C.AZUL; c.beginPath(); c.moveTo(0, H); c.lineTo(0, H * 0.78); c.quadraticCurveTo(W * 0.45, H * 0.86, W * 0.75, H); c.fill();
+
+  const L = ST ? { logoY: 150, logoW: 430, kickY: 330, titleY: 430, ts: 108, subY: 730, phX: 540, phY: 1270, phH: 860, rot: 0, pill: 1820 }
+              : { logoY: 105, logoW: 330, kickY: 255, titleY: 340, ts: 92, subY: 600, phX: 800, phY: 905, phH: 640, rot: 0.06, pill: 1255 };
+  const tx = ST ? W / 2 : 70, al = ST ? 'center' : 'left';
+  // logo
+  const lw = L.logoW, lh = lw * logo.height / logo.width; c.drawImage(logo, ST ? W / 2 - lw / 2 : 52, L.logoY - lh / 2, lw, lh);
+  // etiqueta de la función
+  font(30, 800); const kw = c.measureText(P.kick).width + 104, kx = ST ? W / 2 - kw / 2 : tx;
+  c.fillStyle = P.col; rr(kx, L.kickY - 32, kw, 64, 32); c.fill();
+  c.font = '900 26px FA'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(P.ic, kx + 40, L.kickY + 1);
+  font(30, 800); c.textAlign = 'left'; c.fillText(P.kick, kx + 66, L.kickY + 2);
+  // título
+  c.textAlign = al; c.textBaseline = 'alphabetic'; font(L.ts, 800); c.fillStyle = C.AZUL;
+  P.title.forEach((ln, i) => c.fillText(ln, tx, L.titleY + L.ts * 0.8 + i * L.ts * 1.02));
+  // subtítulo
+  font(ST ? 38 : 32, 600); c.fillStyle = C.GRIS;
+  const maxW = ST ? 860 : 500, words = P.sub.split(' '); let line = '', y = L.subY, lines = [];
+  for (const w of words) { const t = line ? line + ' ' + w : w; if (c.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; } lines.push(line);
+  lines.forEach((ln, i) => c.fillText(ln, tx, y + i * (ST ? 50 : 44)));
+  // teléfono con la pantalla real
+  phone(scr, L.phX, L.phY, L.phH, L.rot);
+  // ícono de la app (solo post) junto al texto
+  if (!ST) { const iy = L.subY + lines.length * 44 + 40; c.save(); c.shadowColor = 'rgba(0,32,104,0.3)'; c.shadowBlur = 24; c.shadowOffsetY = 8; rr(70, iy, 120, 120, 30); c.save(); c.clip(); c.drawImage(icon, 64, iy - 6, 132, 132); c.restore(); c.restore();
+    font(40, 800); c.fillStyle = C.AZUL; c.textAlign = 'left'; c.fillText('Quiroga Digital', 210, iy + 58); font(26, 600); c.fillStyle = C.ROSA; c.fillText('La app de tu municipio', 210, iy + 98); }
+  // PRÓXIMAMENTE
+  font(ST ? 64 : 56, 800); const pt = 'PRÓXIMAMENTE', pw = c.measureText(pt).width + 110, ph = ST ? 116 : 104;
+  const px = ST ? W / 2 - pw / 2 : 70, py = ST ? L.pill - ph / 2 - 40 : L.pill - ph - 20;
+  c.save(); c.shadowColor = 'rgba(0,0,0,0.25)'; c.shadowBlur = 30; c.shadowOffsetY = 10; c.fillStyle = C.ROSA; rr(px, py, pw, ph, ph / 2); c.fill(); c.restore();
+  c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(pt, px + pw / 2, py + ph / 2 + 3);
+  window.done = true;
+})();
+</script></body></html>
