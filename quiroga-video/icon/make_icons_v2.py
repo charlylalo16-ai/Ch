@@ -5,6 +5,7 @@ S = 1024
 Qw, FL = Image.open('q_white.png'), Image.open('flores_clean.png')
 QM = Qw.getchannel('A')
 BASE = (490, 470)
+WORD = 'DIGITAL'
 NAVY, NAVY2, NAVY3, MAG, MAG2, GOLD = (0, 32, 104), (0, 51, 153), (0, 16, 64), (226, 0, 124), (181, 0, 98), (246, 168, 0)
 F_BLACK = '/usr/share/fonts/opentype/inter/InterDisplay-Black.otf'
 
@@ -73,7 +74,7 @@ def compose(bg, qcol, outline, ringcol, wordcol, glowcol, qw=360, qcy=530, wy=86
     ax, ay = qx + pad + 0.66 * qw, qy + pad + 0.07 * qh
     bouquet(im, ax, ay, fw, glow=glowcol)
     drop(im, q, qx, qy); im.alpha_composite(q, (qx, qy))
-    word(im, 'QUIROGA', 512, wy, ws, wordcol, shadow=(0, 0, 0, 70))
+    word(im, WORD, 512, wy, ws, wordcol, shadow=(0, 0, 0, 70))
     return im
 
 def opcion_A():
