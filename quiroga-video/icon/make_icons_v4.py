@@ -7,34 +7,42 @@ NAVY, NAVY2, NAVY3, MAG, GOLD = (0, 32, 104), (0, 51, 153), (0, 16, 64), (226, 0
 F = '/usr/share/fonts/opentype/inter/InterDisplay-Black.otf'
 
 GAP = (222, 318)   # hueco del aro detrás de las flores (grados PIL: 0 = derecha, 270 = arriba)
+K = 4              # sobremuestreo: líneas, aros y cinta se dibujan a 4x y se reducen (bordes suaves)
+def _aa(im, draw_fn):
+    big = Image.new('RGBA', (S * K, S * K), (0, 0, 0, 0)); draw_fn(ImageDraw.Draw(big))
+    im.alpha_composite(big.resize((S, S), Image.LANCZOS))
+
 def seal(im, cx, cy, r, outer, inner, dots=None):
-    d = ImageDraw.Draw(im); g0, g1 = GAP
-    def arc(rr, w, col): d.arc([cx - rr, cy - rr, cx + rr, cy + rr], g1, g0 + 360, fill=col, width=w)
-    arc(r, 18, outer); arc(r - 30, 4, inner)
-    for rr, col in ((r - 9, outer), (r - 28, inner)):   # remates redondos en las puntas del aro
-        pass
-    for ang in (g0, g1):
-        a = math.radians(ang); rr = r - 9; x, y = cx + rr * math.cos(a), cy + rr * math.sin(a)
-        d.ellipse([x - 9, y - 9, x + 9, y + 9], fill=outer)
-    if dots:
-        for k in range(72):
-            ang = k * 5
-            if g0 - 4 < ang < g1 + 4: continue
-            a = math.radians(ang); rr = r - 15
-            d.ellipse([cx + rr * math.cos(a) - 3, cy + rr * math.sin(a) - 3, cx + rr * math.cos(a) + 3, cy + rr * math.sin(a) + 3], fill=dots)
+    g0, g1 = GAP
+    def fn(d):
+        c, R = cx * K, r * K
+        def arc(rr, w, col): d.arc([c - rr, cy * K - rr, c + rr, cy * K + rr], g1, g0 + 360, fill=col, width=w * K)
+        arc(R, 18, outer); arc(R - 30 * K, 4, inner)
+        for ang in (g0, g1):
+            a = math.radians(ang); rr = R - 9 * K; x, y = c + rr * math.cos(a), cy * K + rr * math.sin(a)
+            d.ellipse([x - 9 * K, y - 9 * K, x + 9 * K, y + 9 * K], fill=outer)
+        if dots:
+            for k in range(72):
+                ang = k * 5
+                if g0 - 4 < ang < g1 + 4: continue
+                a = math.radians(ang); rr = R - 15 * K; x, y = c + rr * math.cos(a), cy * K + rr * math.sin(a)
+                d.ellipse([x - 3 * K, y - 3 * K, x + 3 * K, y + 3 * K], fill=dots)
+    _aa(im, fn)
 
 def ribbon(im, txt, cx, cy, size, bg, fg, edge):
-    f = ImageFont.truetype(F, size); d = ImageDraw.Draw(im); tr = size * 0.18
-    w = sum(d.textlength(c, font=f) for c in txt) + tr * (len(txt) - 1); pw, ph = w + size * 1.6, size * 1.55
-    x0, x1, y0, y1 = cx - pw / 2, cx + pw / 2, cy - ph / 2, cy + ph / 2; n = ph * 0.35
-    # colas de la cinta
-    for s in (-1, 1):
-        xa = x0 if s < 0 else x1; xt = xa + s * ph * 0.75
-        d.polygon([(xa, y0 + 16), (xt, y0 + 16), (xt - s * n, cy + 8), (xt, y1 + 16), (xa, y1 + 16)], fill=edge)
-    d.rectangle([x0, y0, x1, y1], fill=bg)
-    d.line([(x0 + 10, y0 + 9), (x1 - 10, y0 + 9)], fill=GOLD, width=3); d.line([(x0 + 10, y1 - 9), (x1 - 10, y1 - 9)], fill=GOLD, width=3)
-    x = cx - w / 2
-    for c in txt: d.text((x, cy + 2), c, font=f, fill=fg, anchor='lm'); x += d.textlength(c, font=f) + tr
+    f = ImageFont.truetype(F, size * K); tr = size * 0.18 * K
+    def fn(d):
+        c, y = cx * K, cy * K
+        w = sum(d.textlength(ch, font=f) for ch in txt) + tr * (len(txt) - 1); pw, ph = w + size * 1.6 * K, size * 1.55 * K
+        x0, x1, y0, y1 = c - pw / 2, c + pw / 2, y - ph / 2, y + ph / 2; n = ph * 0.35; o = 16 * K
+        for s_ in (-1, 1):
+            xa = x0 if s_ < 0 else x1; xt = xa + s_ * ph * 0.75
+            d.polygon([(xa, y0 + o), (xt, y0 + o), (xt - s_ * n, y + 8 * K), (xt, y1 + o), (xa, y1 + o)], fill=edge)
+        d.rectangle([x0, y0, x1, y1], fill=bg)
+        d.line([(x0 + 10 * K, y0 + 9 * K), (x1 - 10 * K, y0 + 9 * K)], fill=GOLD, width=3 * K); d.line([(x0 + 10 * K, y1 - 9 * K), (x1 - 10 * K, y1 - 9 * K)], fill=GOLD, width=3 * K)
+        x = c - w / 2
+        for ch in txt: d.text((x, y + 2 * K), ch, font=f, fill=fg, anchor='lm'); x += d.textlength(ch, font=f) + tr
+    _aa(im, fn)
 
 def build(bg, qfill, outline, ring_o, ring_i, dots, rib_bg, rib_fg, rib_edge, glow):
     im = bg; cx, cy = 512, 470

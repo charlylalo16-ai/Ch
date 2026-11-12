@@ -1,13 +1,13 @@
-"""Exporta el ícono elegido (v4 opción I) en todos los tamaños: Play, Android (legado, redondo, adaptativo) e iOS."""
+"""Exporta el ícono elegido (v4 opción H: blanco con azul) en todos los tamaños: Play, Android (legado, redondo, adaptativo) e iOS."""
 import os, shutil
 from PIL import Image, ImageDraw
 import make_icons_v4 as V4, make_icons_v2 as V2
 OUT = 'final'; shutil.rmtree(OUT, ignore_errors=True)
 S = 1024
-full = V4.I().convert('RGB')                       # ícono completo
+full = V4.H().convert('RGB')                       # ícono completo
 # capas separadas para el ícono adaptativo de Android
-bgl = V2.radial((20, 70, 190), V4.NAVY3, cy=0.42, r=0.85)
-fgl = V4.build(Image.new('RGBA', (S, S), (0, 0, 0, 0)), (V4.W, (220, 226, 242)), None, V4.W, V4.GOLD, None, V4.W, V4.NAVY, (190, 196, 214), V4.W)
+bgl = V2.radial((255, 255, 255), (228, 233, 245), cy=0.42, r=0.85)
+fgl = V4.build(Image.new('RGBA', (S, S), (0, 0, 0, 0)), ((25, 65, 165), V4.NAVY3), None, V4.NAVY, V4.MAG, V4.MAG, V4.NAVY, V4.W, V4.NAVY3, None)
 def save(im, path, size):
     os.makedirs(os.path.dirname(path), exist_ok=True); im.resize((size, size), Image.LANCZOS).save(path, optimize=True)
 # foreground: contenido recortado y ajustado a la zona segura (círculo de 66dp dentro de 108dp)
