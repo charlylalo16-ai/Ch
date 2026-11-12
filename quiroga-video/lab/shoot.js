@@ -11,7 +11,7 @@ const LF = path.join(C, 'leaflet-1.9.4/package/dist');
   const [stepsFile, outdir] = process.argv.slice(2);
   fs.mkdirSync(outdir, { recursive: true });
   const browser = await chromium.launch({ args: ['--force-color-profile=srgb', '--autoplay-policy=no-user-gesture-required'] });
-  const ctx = await browser.newContext({ viewport: { width: 412, height: 892 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
+  const ctx = await browser.newContext({ viewport: { width: +(process.env.VW || 412), height: +(process.env.VH || 892) }, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
     geolocation: { latitude: 19.6650, longitude: -101.5240 }, permissions: ['geolocation'], locale: 'es-MX', timezoneId: 'America/Mexico_City' });
   const page = await ctx.newPage();
   page.on('pageerror', e => console.log('[pageerror]', String(e).slice(0, 200)));
