@@ -8,3 +8,4 @@ lab/tiles.log
 lab/*.png
 lab/explore.js
 lab/probe.js
+lab/store_raw/
