@@ -64,16 +64,16 @@ def word(base, text, cx, y, size, fill, track=6, shadow=None):
 def ring(base, cx, cy, r, w, col, a0=200, a1=520):
     d = ImageDraw.Draw(base); d.arc([cx - r, cy - r, cx + r, cy + r], a0, a1, fill=col, width=w)
 
-def compose(bg, qcol, outline, ringcol, wordcol, glowcol, qw=380, qcy=585, wy=815, fw=450, sop=0.22):
+def compose(bg, qcol, outline, ringcol, wordcol, glowcol, qw=360, qcy=530, wy=868, fw=430, sop=0.22, rr_=300, ws=84):
     im = bg
-    ring(im, 512, qcy - 10, 330, 16, ringcol)
+    ring(im, 512, qcy - 5, rr_, 16, ringcol)
     q, pad, qh = q_layer(qw, *qcol, outline=outline, ow=10 if outline else 0)
     qx, qy = 512 - q.width // 2, qcy - q.height // 2
     long_shadow(im, q, qx, qy, col=(0, 0, 0), op=sop)
     ax, ay = qx + pad + 0.66 * qw, qy + pad + 0.07 * qh
     bouquet(im, ax, ay, fw, glow=glowcol)
     drop(im, q, qx, qy); im.alpha_composite(q, (qx, qy))
-    word(im, 'QUIROGA', 512, wy, 92, wordcol, shadow=(0, 0, 0, 70))
+    word(im, 'QUIROGA', 512, wy, ws, wordcol, shadow=(0, 0, 0, 70))
     return im
 
 def opcion_A():
@@ -86,9 +86,9 @@ def opcion_B():
 
 def opcion_C():
     bg = radial((255, 255, 255), (232, 236, 246), cy=0.40, r=0.85); d = ImageDraw.Draw(bg)
-    d.polygon([(0, 880)] + [(x, 880 + 30 * math.sin(x / S * math.pi * 1.6)) for x in range(0, S + 1, 16)] + [(S, S), (0, S)], fill=MAG)
-    d.polygon([(0, 930)] + [(x, 930 + 26 * math.sin(x / S * math.pi * 1.6 + 1)) for x in range(0, S + 1, 16)] + [(S, S), (0, S)], fill=NAVY)
-    return compose(bg, ((20, 60, 160), NAVY3), None, MAG + (200,), NAVY, None, qw=340, qcy=560, wy=770, sop=0.10)
+    d.polygon([(0, 955)] + [(x, 955 + 22 * math.sin(x / S * math.pi * 1.6)) for x in range(0, S + 1, 16)] + [(S, S), (0, S)], fill=MAG)
+    d.polygon([(0, 985)] + [(x, 985 + 18 * math.sin(x / S * math.pi * 1.6 + 1)) for x in range(0, S + 1, 16)] + [(S, S), (0, S)], fill=NAVY)
+    return compose(bg, ((20, 60, 160), NAVY3), None, MAG + (200,), NAVY, None, qw=340, qcy=515, wy=840, sop=0.10, rr_=290)
 
 if __name__ == '__main__':
     opts = {'A': opcion_A(), 'B': opcion_B(), 'C': opcion_C()}
