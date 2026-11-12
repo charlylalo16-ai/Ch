@@ -13,7 +13,16 @@ module.exports = async (page) => {
         { id: 'a3', titulo: 'Horario de atención en Presidencia', texto: 'Lunes a viernes de 9:00 a 15:00 h.', categoria: 'tramites', fecha: d(50) },
       ],
       reportes: [
-        { id: 'r1', uid: 'demo', folio: 'REP-EJEMPLO1', titulo: 'Luminaria apagada (ejemplo)', desc: 'Reporte de ejemplo.', area: 'obras', estado: 'atendido', ubicacion: 'Ejemplo', fecha: d(72) },
+        { id: 'r1', uid: 'demo', folio: 'REP-EJEMPLO1', titulo: 'Luminaria apagada', desc: 'La luminaria de la esquina no enciende por las noches.', area: 'obras', estado: 'atendido', nota: 'Luminaria reparada. ¡Gracias por reportar!', ubicacion: 'Calle de ejemplo', fecha: d(72) },
+        { id: 'r2', uid: 'demo', folio: 'REP-EJEMPLO2', titulo: 'Fuga de agua en la banqueta', desc: 'Hay una fuga de agua constante frente a la tienda.', area: 'oapas', estado: 'pendiente', ubicacion: 'Calle de ejemplo', fecha: d(5) },
+      ],
+      directorio: [
+        { id: 'd1', orden: 1, nombre: 'Presidencia Municipal', icono: 'fa-landmark', color: '#002068', telefono: '000 000 0000', horario: 'Lunes a viernes, 9:00 a 15:00 h' },
+        { id: 'd2', orden: 2, nombre: 'Seguridad Pública', icono: 'fa-shield-alt', color: '#ba1a1a', telefono: '000 000 0000', horario: 'Las 24 horas' },
+        { id: 'd3', orden: 3, nombre: 'OAPAS (Agua Potable)', icono: 'fa-tint', color: '#0077c8', telefono: '000 000 0000', horario: 'Lunes a viernes, 9:00 a 15:00 h' },
+        { id: 'd4', orden: 4, nombre: 'Obras Públicas', icono: 'fa-hard-hat', color: '#a86a00', telefono: '000 000 0000', horario: 'Lunes a viernes, 9:00 a 15:00 h' },
+        { id: 'd5', orden: 5, nombre: 'DIF Municipal', icono: 'fa-heart', color: '#e2007c', telefono: '000 000 0000', horario: 'Lunes a viernes, 9:00 a 15:00 h' },
+        { id: 'd6', orden: 6, nombre: 'Tránsito Municipal', icono: 'fa-car', color: '#f6a800', telefono: '000 000 0000', horario: 'Lunes a domingo, 8:00 a 20:00 h' },
       ],
       'doc:rutas_camion/camion_1': { nombre: 'Camión 1', colonias: [
         { nombre: 'Centro', hora: '08:00', lat: 19.6640, lng: -101.5260 },
@@ -35,9 +44,13 @@ module.exports = async (page) => {
   await clean(); await shot('01_inicio');
   await ev(() => showSection('emergencias')); await clean(); await shot('02_alerta_mujer');
   await ev(() => showSection('reportes')); await clean();
-  await ev(() => { const s = document.querySelector('#repArea'); s.value = 'obras'; s.dispatchEvent(new Event('change', { bubbles: true })); document.querySelector('#repTitulo').value = 'Bache en la calle'; });
+  await ev(() => { const s = document.querySelector('#repArea'); s.value = 'obras'; s.dispatchEvent(new Event('change', { bubbles: true })); document.querySelector('#repTitulo').value = 'Bache en la calle'; document.querySelector('#repUbicacion').value = 'Calle Morelos, Centro'; });
   await shot('03_nuevo_reporte');
-  await ev(() => showSection('avisos')); await page.waitForTimeout(400); await clean(); await shot('04_avisos');
-  await ev(() => showSection('camion')); await page.waitForTimeout(2500); await clean(); await shot('05_camion');
-  await ev(() => showSection('mensajes')); await clean(); await shot('06_mensajes');
+  await ev(() => showSection('camion')); await page.waitForTimeout(2500); await clean(); await shot('04_camion');
+  await ev(() => showSection('mensajes')); await clean(); await shot('05_mensajes');
+  await ev(() => showSection('avisos')); await page.waitForTimeout(400); await clean(); await shot('06_avisos');
+  await ev(() => { showSection('reportes'); document.querySelector('#repTitulo').value = ''; document.querySelector('#repUbicacion').value = ''; }); await page.waitForTimeout(500); await clean();
+  await ev(() => { const el = document.getElementById('misReportes'); const card = el.closest('.card') || el; window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - 70); });
+  await shot('07_seguimiento');
+  await ev(() => { showSection('directorio'); if (typeof cargarDirectorio === 'function') cargarDirectorio(); }); await page.waitForTimeout(600); await clean(); await shot('08_directorio');
 };
