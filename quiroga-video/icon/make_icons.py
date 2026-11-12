@@ -19,8 +19,16 @@ def place(base, img, w, cx, cy, shadow=0.0):
         base.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)), (cx - w // 2 + 6, cy - h // 2 + 16))
     base.alpha_composite(im, (cx - w // 2, cy - h // 2))
 
+BASE = (490, 470)   # where the bouquet's stems meet (flower image coords)
+def sprout(base, q, qw, qcx, qcy, fw, rel=(0.70, 0.06), rot=0):
+    # bouquet whose stems come out of the Q: stem base anchored at a point on the Q's top-right
+    qh = int(q.height * qw / q.width); ax = qcx - qw // 2 + rel[0] * qw; ay = qcy - qh // 2 + rel[1] * qh
+    k = fw / FL.width; fl = FL.resize((fw, int(FL.height * k)), Image.LANCZOS)
+    if rot: fl = fl.rotate(rot, resample=Image.BICUBIC, expand=False, center=(BASE[0] * k, BASE[1] * k))
+    base.alpha_composite(fl, (int(ax - BASE[0] * k), int(ay - BASE[1] * k)))
+
 def opcion_A():   # azul institucional, Q blanca con el ramillete del logo
-    im = grad((0, 51, 153), (0, 22, 80)); place(im, FL, 430, 610, 345); place(im, Qw, 380, 470, 590, 0.35); return im
+    im = grad((0, 51, 153), (0, 22, 80)); sprout(im, Qw, 380, 470, 640, 470); place(im, Qw, 380, 470, 640, 0.35); return im
 
 def opcion_B():   # ubicación: pin blanco con Q azul, degradado rosa→azul
     im = grad((226, 0, 124), (0, 32, 104), diag=True)
@@ -28,12 +36,12 @@ def opcion_B():   # ubicación: pin blanco con Q azul, degradado rosa→azul
     d.ellipse([cx - r, cy - r, cx + r, cy + r], fill='white'); d.polygon([(cx - 160, cy + 170), (cx + 160, cy + 170), (cx, cy + 385)], fill='white')
     sh = Image.new('RGBA', (S, S)); sh.putalpha(pin.getchannel('A').point(lambda v: int(v * 0.3)))
     im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)), (8, 18)); im.alpha_composite(pin)
-    place(im, FL, 290, 610, 255); place(im, Qn, 235, 500, 490); return im
+    sprout(im, Qn, 235, 500, 520, 300); place(im, Qn, 235, 500, 520); return im
 
 def opcion_C():   # blanco con Q azul, ramillete y onda rosa
     im = Image.new('RGBA', (S, S), 'white'); d = ImageDraw.Draw(im)
     d.polygon([(0, 830)] + [(x, 830 + 38 * math.sin(x / S * math.pi * 1.5)) for x in range(0, S + 1, 16)] + [(S, S), (0, S)], fill=(226, 0, 124))
-    place(im, FL, 420, 610, 335); place(im, Qn, 370, 470, 570); return im
+    sprout(im, Qn, 370, 470, 600, 460); place(im, Qn, 370, 470, 600); return im
 
 if __name__ == '__main__':
     opts = {'A': opcion_A(), 'B': opcion_B(), 'C': opcion_C()}
