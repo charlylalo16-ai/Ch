@@ -6,13 +6,21 @@ S = 1024; W = (255, 255, 255)
 NAVY, NAVY2, NAVY3, MAG, GOLD = (0, 32, 104), (0, 51, 153), (0, 16, 64), (226, 0, 124), (198, 160, 82)
 F = '/usr/share/fonts/opentype/inter/InterDisplay-Black.otf'
 
+GAP = (222, 318)   # hueco del aro detrás de las flores (grados PIL: 0 = derecha, 270 = arriba)
 def seal(im, cx, cy, r, outer, inner, dots=None):
-    d = ImageDraw.Draw(im)
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=outer, width=18)
-    d.ellipse([cx - r + 30, cy - r + 30, cx + r - 30, cy + r - 30], outline=inner, width=4)
+    d = ImageDraw.Draw(im); g0, g1 = GAP
+    def arc(rr, w, col): d.arc([cx - rr, cy - rr, cx + rr, cy + rr], g1, g0 + 360, fill=col, width=w)
+    arc(r, 18, outer); arc(r - 30, 4, inner)
+    for rr, col in ((r - 9, outer), (r - 28, inner)):   # remates redondos en las puntas del aro
+        pass
+    for ang in (g0, g1):
+        a = math.radians(ang); rr = r - 9; x, y = cx + rr * math.cos(a), cy + rr * math.sin(a)
+        d.ellipse([x - 9, y - 9, x + 9, y + 9], fill=outer)
     if dots:
-        for k in range(60):
-            a = math.radians(k * 6); rr = r - 15
+        for k in range(72):
+            ang = k * 5
+            if g0 - 4 < ang < g1 + 4: continue
+            a = math.radians(ang); rr = r - 15
             d.ellipse([cx + rr * math.cos(a) - 3, cy + rr * math.sin(a) - 3, cx + rr * math.cos(a) + 3, cy + rr * math.sin(a) + 3], fill=dots)
 
 def ribbon(im, txt, cx, cy, size, bg, fg, edge):
@@ -30,7 +38,7 @@ def ribbon(im, txt, cx, cy, size, bg, fg, edge):
 
 def build(bg, qfill, outline, ring_o, ring_i, dots, rib_bg, rib_fg, rib_edge, glow):
     im = bg; cx, cy = 512, 470
-    seal(im, cx, cy, 330, ring_o, ring_i, dots)
+    seal(im, cx, cy + 20, 400, ring_o, ring_i, dots)
     q, pad, qh = V2.q_layer(330, *qfill, outline=outline, ow=10 if outline else 0)
     qx, qy = cx - q.width // 2, cy + 25 - q.height // 2
     V2.bouquet(im, qx + pad + 0.66 * 330, qy + pad + 0.07 * qh, 400, glow=glow)
