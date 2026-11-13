@@ -70,7 +70,7 @@ function phone(img, cx, cy, sh, rot) {
   // teléfono con la pantalla real
   phone(scr, L.phX, L.phY, L.phH, L.rot);
   // ícono de la app (solo post) junto al texto
-  if (!ST) { const iy = L.subY + lines.length * 44 + 40; c.save(); c.shadowColor = 'rgba(0,32,104,0.3)'; c.shadowBlur = 24; c.shadowOffsetY = 8; rr(70, iy, 120, 120, 30); c.save(); c.clip(); c.drawImage(icon, 64, iy - 6, 132, 132); c.restore(); c.restore();
+  if (!ST) { const iy = L.subY + lines.length * 44 + 40; c.save(); c.shadowColor = 'rgba(0,32,104,0.3)'; c.shadowBlur = 24; c.shadowOffsetY = 8; rr(70, iy, 120, 120, 30); c.save(); c.clip(); c.drawImage(icon, 70, iy, 120, 120); c.restore(); c.shadowColor = 'transparent'; c.strokeStyle = 'rgba(0,32,104,0.18)'; c.lineWidth = 3; rr(70, iy, 120, 120, 30); c.stroke(); c.restore();
     font(40, 800); c.fillStyle = C.AZUL; c.textAlign = 'left'; c.fillText('Quiroga Digital', 210, iy + 58); font(26, 600); c.fillStyle = C.ROSA; c.fillText('La app de tu municipio', 210, iy + 98); }
   // PRÓXIMAMENTE
   font(ST ? 64 : 56, 800); const pt = 'PRÓXIMAMENTE', pw = c.measureText(pt).width + 110, ph = ST ? 116 : 104;

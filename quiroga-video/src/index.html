@@ -81,7 +81,7 @@ function drawHome(c, t, widget) {
   APPS.forEach((a, i) => {
     const col = i % 4, row = Math.floor(i / 4), x = 34 + col * 92, y = 420 + row * 104;
     if (a[1]) { c.fillStyle = a[1]; rr(c, x, y, 60, 60, 16); c.fill(); icon(c, FA[a[2]], x + 30, y + 31, 26, '#fff'); }
-    else if (IMG[A + 'icon.png']) { c.save(); rr(c, x, y, 60, 60, 16); c.clip(); c.drawImage(IMG[A + 'icon.png'], x - 4, y - 4, 68, 68); c.restore(); }
+    else if (IMG[A + 'icon.png']) { c.save(); rr(c, x, y, 60, 60, 16); c.clip(); c.drawImage(IMG[A + 'icon.png'], x, y, 60, 60); c.restore(); }
     font(c, 12, 600); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(a[0] === 'QUIROGA' ? 'Quiroga' : a[0], x + 30, y + 80);
   });
   // dock
@@ -351,7 +351,7 @@ function drawOutro(c, t) {
   const lp = E.outC(prog(lt, 0.5, 1.6));
   if (lg && lp > 0) { const w = V ? 760 : 760, h = w * lg.height / lg.width; c.save(); c.globalAlpha = lp; c.translate(CX, (V ? 470 : 250) + (1 - lp) * 40); c.drawImage(lg, -w / 2, -h / 2, w, h); c.restore(); }
   const ip = E.outC(prog(lt, 1.4, 2.3)), iy = V ? 930 : 560;
-  if (ic && ip > 0) { c.save(); c.globalAlpha = ip; c.translate(V ? CX : CX - 430, iy + (1 - ip) * 30); c.shadowColor = 'rgba(0,0,0,0.4)'; c.shadowBlur = 40; c.shadowOffsetY = 16; rr(c, -110, -110, 220, 220, 52); c.save(); c.clip(); c.drawImage(ic, -120, -120, 240, 240); c.restore(); c.restore(); }
+  if (ic && ip > 0) { c.save(); c.globalAlpha = ip; c.translate(V ? CX : CX - 430, iy + (1 - ip) * 30); c.shadowColor = 'rgba(0,0,0,0.4)'; c.shadowBlur = 40; c.shadowOffsetY = 16; rr(c, -110, -110, 220, 220, 52); c.save(); c.clip(); c.drawImage(ic, -110, -110, 220, 220); c.restore(); c.shadowColor = 'transparent'; c.strokeStyle = 'rgba(0,32,104,0.18)'; c.lineWidth = 3; rr(c, -110, -110, 220, 220, 52); c.stroke(); c.restore(); }
   const tp = E.outC(prog(lt, 1.9, 2.8));
   c.save(); c.globalAlpha = tp; c.textAlign = V ? 'center' : 'left'; c.textBaseline = 'alphabetic';
   const tx = V ? CX : CX - 280;
