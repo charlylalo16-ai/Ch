@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Gráfico de funciones · Quiroga Digital</title>
+<style>
+@font-face{font-family:'Jak';src:url('../build/assets/jakarta.woff2');font-weight:200 800}
+@font-face{font-family:'FA';src:url('../build/assets/fa-solid.woff2');font-weight:900}
+html,body{margin:0}canvas{display:block}
+</style></head><body><canvas id="c"></canvas>
+<script>
+// Gráfico de funciones para Google Play (1024x500). Se dibuja a 2x y la captura se reduce.
+const K = 2, W = 1024, H = 500;
+const C = { AZUL: '#002068', AZUL2: '#003399', ROSA: '#e2007c', ROJO: '#ba1a1a', TXT: '#1a1c1e', GRIS: '#5b5d6b' };
+const A = '../build/assets/';
+const cv = document.getElementById('c'); cv.width = W * K; cv.height = H * K; const c = cv.getContext('2d'); c.scale(K, K);
+function rr(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+const font = (s, w = 800) => c.font = `${w} ${s}px Jak`;
+const load = s => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = s; });
+(async () => {
+  await document.fonts.load('800 40px Jak'); await document.fonts.load('900 20px FA');
+  const [icon, logo] = await Promise.all([load(A + 'icon.png'), load(A + 'logo-color.png')]);
+  // fondo blanco + franjas institucionales (mismo estilo del video y las imágenes)
+  c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+  c.fillStyle = C.ROSA; c.beginPath(); c.moveTo(W, 0); c.lineTo(W, 120); c.quadraticCurveTo(W * 0.78, 50, W * 0.6, 0); c.fill();
+  c.fillStyle = C.AZUL; c.beginPath(); c.moveTo(0, H); c.lineTo(0, 360); c.quadraticCurveTo(W * 0.22, 440, W * 0.42, H); c.fill();
+  // ícono grande
+  const ix = 92, iy = 105, is = 290;
+  c.save(); c.shadowColor = 'rgba(0,32,104,0.30)'; c.shadowBlur = 40; c.shadowOffsetY = 16; rr(ix, iy, is, is, 66); c.fillStyle = '#fff'; c.fill(); c.restore();
+  c.save(); rr(ix, iy, is, is, 66); c.clip(); c.drawImage(icon, ix, iy, is, is); c.restore();
+  c.strokeStyle = 'rgba(0,32,104,0.15)'; c.lineWidth = 2; rr(ix, iy, is, is, 66); c.stroke();
+  // logo del Ayuntamiento
+  const lw = 190, lh = lw * logo.height / logo.width; c.drawImage(logo, 468, 62, lw, lh);
+  // textos
+  const tx = 470;
+  font(58); c.fillStyle = C.AZUL; c.textBaseline = 'alphabetic'; c.fillText('Quiroga Digital', tx, 218);
+  font(27, 600); c.fillStyle = C.ROSA; c.fillText('Tu municipio en tu celular', tx, 258);
+  // funciones
+  const F = [['', 'Alerta Mujer', C.ROJO], ['', 'Reportes', C.AZUL2], ['', 'Avisos', C.ROSA], ['', 'Camión', '#a86a00'], ['', 'Mensajes', '#0077c8']];
+  F.forEach(([ic, lab, col], i) => {
+    const cx = tx + 40 + i * 98, cy = 330;
+    c.fillStyle = col; c.beginPath(); c.arc(cx, cy, 31, 0, 7); c.fill();
+    c.font = '900 25px FA'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ic, cx, cy + 1);
+    font(16, 700); c.fillStyle = C.TXT; c.textBaseline = 'alphabetic'; c.fillText(lab, cx, cy + 56); c.textAlign = 'left';
+  });
+  window.done = true;
+})();
+</script></body></html>
