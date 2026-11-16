@@ -1,0 +1,129 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>ZENTRIX STUDIO · Intro</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script src="../build/layers/ring.js"></script>
+<script>
+const Q = new URLSearchParams(location.search), V = (Q.get('fmt') || 'h') === 'v';
+const W = V ? 1080 : 1920, H = V ? 1920 : 1080, FPS = 60, DUR = 7.0;
+const L = '../build/layers/';
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const out = cv.getContext('2d');
+const mk = (w = W, h = H) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const sceneCv = mk(), accCv = mk(), sc = sceneCv.getContext('2d'), acc = accCv.getContext('2d');
+const LW = 2400, LH = 1600, tmpCv = mk(LW, LH), tmp = tmpCv.getContext('2d');
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t, prog = (t, a, b) => clamp((t - a) / (b - a));
+const E = { outExpo: t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t), inOutC: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  outBack: (t, s = 1.7) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2), inQ: t => t * t, outC: t => 1 - Math.pow(1 - t, 3) };
+function hash(n) { let x = (Math.floor(n) | 0) ^ 0x9E3779B9; x = Math.imul(x ^ (x >>> 16), 0x85EBCA6B); x = Math.imul(x ^ (x >>> 13), 0xC2B2AE35); x ^= x >>> 16; return (x >>> 0) / 4294967296; }
+const IMG = {}; const load = n => new Promise(r => { const i = new Image(); i.onload = () => { IMG[n] = i; r(); }; i.src = L + n + '.png'; });
+let RING = null;
+
+// ---- logo placement
+const SCALE = V ? 0.43 : 0.62, OX = (W - LW * SCALE) / 2, OY = (H - LH * SCALE) / 2 + (V ? -40 : 0);
+const T = { comet0: 0.35, comet1: 1.75, z0: 1.15, hit: 1.85, word0: 2.25, word1: 2.95, stu0: 2.95, stu1: 3.6, end: 6.45 };
+const A0 = 162;   // ángulo donde empieza el aro (punta izquierda)
+
+function ringPoint(deg) {   // punto del aro en coords del logo, interpolado
+  const P = RING.pts, n = P.length; let d = ((deg % 360) + 360) % 360; const i = Math.floor(d / 2), f = (d - i * 2) / 2;
+  let a = P[i % n], b = P[(i + 1) % n]; if (!a) a = b; if (!b) b = a; if (!a) return null;
+  return [lerp(a[0], b[0], f), lerp(a[1], b[1], f)];
+}
+function sweepMask(c, deg0, deg1) {   // cuña angular desde el centro del aro
+  const [cx, cy] = RING.c; c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, 3000, deg0 * Math.PI / 180, deg1 * Math.PI / 180); c.closePath();
+}
+function drawLayer(c, name, alpha = 1, dx = 0, filter = null, op = null) {
+  c.save(); c.globalAlpha = alpha; if (filter) c.filter = filter; if (op) c.globalCompositeOperation = op; c.drawImage(IMG[name], dx, 0); c.restore();
+}
+function shine(c, name, t, t0, dur) {   // brillo diagonal que recorre la capa
+  const p = prog(t, t0, t0 + dur); if (p <= 0 || p >= 1) return;
+  tmp.clearRect(0, 0, LW, LH); tmp.globalCompositeOperation = 'source-over'; tmp.drawImage(IMG[name], 0, 0);
+  tmp.globalCompositeOperation = 'source-in'; const x = lerp(-600, LW + 600, E.inOutC(p));
+  const g = tmp.createLinearGradient(x - 220, 0, x + 220, LH * 0.3); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.85)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  tmp.fillStyle = g; tmp.fillRect(0, 0, LW, LH); tmp.globalCompositeOperation = 'source-over';
+  c.save(); c.globalCompositeOperation = 'lighter'; c.drawImage(tmpCv, 0, 0); c.restore();
+}
+
+const PARTS = Array.from({ length: 140 }, (_, i) => [hash(i * 3 + 1), hash(i * 5 + 2), hash(i * 7 + 3), hash(i * 11 + 4)]);
+function drawFrame(c, t) {
+  c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+  // fondo: viñeta azul muy tenue que respira tras el golpe
+  const bg = prog(t, T.hit - 0.1, T.hit + 0.6) * (1 - prog(t, T.end, DUR));
+  if (bg > 0) { const g = c.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, Math.max(W, H) * 0.7); g.addColorStop(0, `rgba(20,70,200,${0.22 * bg})`); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+  // partículas a la deriva
+  c.save(); c.globalCompositeOperation = 'lighter';
+  for (const [a, b, s, k] of PARTS) {
+    const x = ((a * W + t * (20 + 60 * k)) % (W + 40)) - 20, y = ((b * H - t * (10 + 40 * s)) % H + H) % H;
+    const al = (0.15 + 0.5 * s) * prog(t, 0.1, 0.8) * (1 - prog(t, T.end, DUR)) * (0.6 + 0.4 * Math.sin(t * 3 + k * 9));
+    c.fillStyle = `rgba(90,160,255,${al})`; c.beginPath(); c.arc(x, y, 1 + 2.5 * s, 0, 7); c.fill();
+  }
+  c.restore();
+
+  const zoom = 1 + 0.04 * E.inOutC(prog(t, T.hit, DUR));
+  let shake = 0; if (t > T.hit) shake = 14 * Math.exp(-(t - T.hit) * 9);
+  c.save(); c.translate(W / 2 + shake * (hash(Math.floor(t * 60)) - 0.5), H / 2 + shake * (hash(Math.floor(t * 60) + 7) - 0.5)); c.scale(zoom, zoom); c.translate(-W / 2, -H / 2);
+  c.translate(OX, OY); c.scale(SCALE, SCALE);
+  const fade = 1 - prog(t, T.end, DUR);
+  c.globalAlpha = fade;
+
+  // 1) aro + S: se dibuja con un barrido angular; cometa en la punta
+  const sw = E.inOutC(prog(t, T.comet0, T.comet1)), deg = A0 + 360 * sw;
+  if (sw > 0) {
+    c.save(); sweepMask(c, A0, deg); c.clip(); drawLayer(c, 'azul', fade); c.restore();
+    if (sw < 1) {
+      const p = ringPoint(deg);
+      if (p) {
+        c.save(); c.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 14; k++) { const q = ringPoint(deg - k * 2.2); if (!q) continue; const al = (1 - k / 14) * 0.55;
+          const g = c.createRadialGradient(q[0], q[1], 0, q[0], q[1], 70 - k * 3); g.addColorStop(0, `rgba(150,210,255,${al})`); g.addColorStop(1, 'rgba(0,80,255,0)'); c.fillStyle = g; c.fillRect(q[0] - 80, q[1] - 80, 160, 160); }
+        const g = c.createRadialGradient(p[0], p[1], 0, p[0], p[1], 160); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.15, 'rgba(140,200,255,0.8)'); g.addColorStop(1, 'rgba(0,60,255,0)');
+        c.fillStyle = g; c.fillRect(p[0] - 160, p[1] - 160, 320, 320);
+        c.strokeStyle = 'rgba(200,230,255,0.5)'; c.lineWidth = 3; c.beginPath(); c.moveTo(p[0] - 260, p[1]); c.lineTo(p[0] + 260, p[1]); c.stroke();
+        c.restore();
+      }
+    }
+  }
+  // 2) Z entra desde la izquierda con estela
+  const zp = E.outExpo(prog(t, T.z0, T.hit)), zx = (1 - zp) * -1400;
+  if (zp > 0) {
+    for (let k = 1; k <= 5 && zp < 0.98; k++) drawLayer(c, 'z', 0.12 * fade * (1 - zp), zx - k * 90 * (1 - zp));
+    drawLayer(c, 'z', fade * clamp(zp * 2), zx);
+  }
+  // resplandor del aro (pulso)
+  if (t > T.hit) { const pu = 0.35 + 0.2 * Math.sin((t - T.hit) * 3.2); drawLayer(c, 'azul', pu * fade * prog(t, T.hit, T.hit + 0.3), 0, 'blur(22px)', 'lighter'); }
+  shine(c, 'z', t, T.hit + 0.25, 0.9); shine(c, 'azul', t, T.hit + 0.35, 0.9); shine(c, 'z', t, 5.0, 1.0); shine(c, 'azul', t, 5.1, 1.0);
+
+  // 3) ZENTRIX: barrido izquierda→derecha con línea de luz
+  const wp = E.inOutC(prog(t, T.word0, T.word1));
+  if (wp > 0) {
+    const x0 = 640, x1 = 1760, xe = lerp(x0, x1 + 40, wp);
+    c.save(); c.beginPath(); c.rect(0, 1040, xe, 230); c.clip(); drawLayer(c, 'zentrix', fade); c.restore();
+    if (wp < 1) { c.save(); c.globalCompositeOperation = 'lighter'; const g = c.createLinearGradient(xe - 60, 0, xe + 20, 0); g.addColorStop(0, 'rgba(60,140,255,0)'); g.addColorStop(1, 'rgba(180,220,255,0.9)'); c.fillStyle = g; c.fillRect(xe - 60, 1060, 80, 190); c.restore(); }
+  }
+  // 4) STUDIO: líneas crecen desde el centro, letras aparecen
+  const sp = E.outExpo(prog(t, T.stu0, T.stu1));
+  if (sp > 0) {
+    const cx = 1200; c.save(); c.beginPath(); c.rect(cx - 900 * sp, 1270, 1800 * sp, 160); c.clip(); drawLayer(c, 'studio', fade * clamp(sp * 1.5)); c.restore();
+  }
+  c.restore();
+
+  // golpe: destello + onda expansiva
+  if (t >= T.hit) {
+    const e = t - T.hit; const [cx, cy] = [OX + 1200 * SCALE, OY + 660 * SCALE];
+    c.save(); c.globalCompositeOperation = 'lighter';
+    const fl = Math.exp(-e * 7); if (fl > 0.01) { const g = c.createRadialGradient(cx, cy, 0, cx, cy, W * 0.6); g.addColorStop(0, `rgba(200,230,255,${0.9 * fl})`); g.addColorStop(1, 'rgba(0,60,255,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+    const r = 60 + e * 1600, al = Math.max(0, 0.7 - e * 1.1); if (al > 0) { c.strokeStyle = `rgba(110,180,255,${al})`; c.lineWidth = 6 + 20 * Math.exp(-e * 4); c.beginPath(); c.ellipse(cx, cy, r, r * 0.42, -0.32, 0, 7); c.stroke(); }
+    for (let i = 0; i < 60; i++) { const a = hash(i * 13) * Math.PI * 2, v = 300 + 900 * hash(i * 17), d = v * (1 - Math.exp(-e * 3)) / 3, al2 = Math.max(0, 1 - e * 1.2);
+      if (al2 <= 0) break; c.fillStyle = `rgba(150,210,255,${al2})`; c.beginPath(); c.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.6, 2 + 3 * hash(i), 0, 7); c.fill(); }
+    c.restore();
+  }
+  // barras de cine sutiles al inicio
+}
+function subs(t) { return (t > T.z0 && t < T.hit + 0.3) || (t > T.comet0 && t < T.comet1) ? 8 : 3; }
+async function renderFrame(f) {
+  const t = f / FPS, n = subs(t), sh = 0.5 / FPS;
+  for (let i = 0; i < n; i++) { const ts = clamp(t + (i / (n - 1) - 0.5) * sh, 0, DUR - 1e-3); sc.setTransform(1, 0, 0, 1, 0, 0); sc.globalAlpha = 1; drawFrame(sc, ts); acc.globalAlpha = 1 / (i + 1); acc.drawImage(sceneCv, 0, 0); }
+  acc.globalAlpha = 1; out.drawImage(accCv, 0, 0);
+}
+window.renderFrame = renderFrame; window.NFRAMES = Math.round(DUR * FPS);
+window.ready = (async () => { await Promise.all(['z', 'azul', 'zentrix', 'studio'].map(load)); RING = window.RINGDATA; return true; })();
+</script></body></html>
