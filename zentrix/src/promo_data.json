@@ -1,0 +1,25 @@
+{
+  "teaser": {
+    "dur": 18.0,
+    "logo_in": [0.3, 1.8], "logo_out": [2.5, 3.2],
+    "type": [3.5, 7.6],
+    "build": {"devices_in": [7.9, 8.9], "wire": [8.6, 10.2], "color": [10.4, 12.2], "out": [13.6, 14.3]},
+    "close": {"text": [14.3, 15.3], "logo": [15.0, 16.0], "proximamente": [15.7, 16.5], "fade": [17.3, 18.0]},
+    "whoosh": [2.7, 7.9, 13.9],
+    "code": [
+      [["k", "import"], ["w", " { "], ["c", "App"], ["w", " } "], ["k", "from"], ["s", " 'zentrix'"], ["w", ";"]],
+      [],
+      [["k", "const"], ["w", " tuNegocio = "], ["f", "crearApp"], ["w", "({"]],
+      [["w", "  nombre: "], ["s", "'Tu Negocio'"], ["w", ","]],
+      [["w", "  plataformas: ["], ["s", "'iOS'"], ["w", ", "], ["s", "'Android'"], ["w", ", "], ["s", "'Web'"], ["w", "],"]],
+      [["w", "  diseño: "], ["s", "'a tu medida'"], ["w", ","]],
+      [["w", "});"]],
+      [],
+      [["w", "tuNegocio."], ["f", "lanzar"], ["w", "();  "], ["m", "// Próximamente..."]]
+    ]
+  },
+  "carga": {
+    "dur": 8.0,
+    "logo_in": [0.2, 1.2], "bar": [1.2, 5.6], "stop": 87, "glitch": [5.8, 6.4], "prox": [6.3, 7.0], "fade": [7.4, 8.0]
+  }
+}
