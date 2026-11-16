@@ -1,8 +1,8 @@
 """ZENTRIX STUDIO · sonido de la intro (sintetizado con numpy, sin samples). 7 s, 48 kHz estéreo."""
 import sys, wave
 import numpy as np
-SR, DUR = 48000, 7.0; N = int(SR * DUR); rng = np.random.default_rng(7)
-T = dict(comet0=0.35, comet1=1.75, z0=1.15, hit=1.85, word0=2.25, word1=2.95, stu0=2.95, end=6.45)
+SR, DUR = 48000, 12.0; N = int(SR * DUR); rng = np.random.default_rng(7)
+T = dict(comet0=0.8, comet1=3.4, z0=2.6, s0=3.2, hit=4.9, word0=5.9, word1=7.5, stu0=7.5, end=11.2)
 L = np.zeros(N); R = np.zeros(N); SL = np.zeros(N); SRv = np.zeros(N)
 tt = lambda n: np.arange(n) / SR
 def add(sig, t0, g=1.0, pan=0.0, send=0.0):
@@ -31,10 +31,14 @@ n = int((T['comet1'] - T['comet0']) * SR); x = tt(n) / (n / SR); nz = rng.standa
 cm = (onepole(nz, 800 + 6000 * np.sin(np.pi * x)) - onepole(nz, 400)) * np.sin(np.pi * x) ** 1.5
 for k, p in enumerate(np.linspace(-0.8, 0.8, 8)):   # paneo por tramos
     a, b = int(k * n / 8), int((k + 1) * n / 8); seg = fade(cm[a:b] * 0.6, 0.01, 0.01); add(seg, T['comet0'] + a / SR, 1.0, p, 0.25)
-# Z: whoosh corto
+# contornos de Z y S dibujándose: brillo suave que sube
+for t0, base in ((T['z0'], 660), (T['s0'], 880)):
+    n = int(1.3 * SR); t = tt(n); x = t / 1.3
+    f = base * 2 ** (x * 0.5); sh = np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.6 + np.sin(2 * np.pi * np.cumsum(f * 2.01) / SR) * 0.3
+    add(fade(sh * np.sin(np.pi * x) ** 2 * 0.12, 0.05, 0.1), t0, 1.0, -0.3 if base < 700 else 0.3, 0.6)
 n = int(0.6 * SR); x = tt(n) / 0.6; nz = rng.standard_normal(n)
 wz = (onepole(nz, 300 * (7000 / 300) ** x) - onepole(nz, 200)) * np.where(x < 0.8, (x / 0.8) ** 2, np.exp(-(x - 0.8) * 20))
-add(fade(wz * 0.8), T['hit'] - 0.5, 0.7, -0.4, 0.2)
+add(fade(wz * 0.6), T['hit'] - 0.5, 0.6, 0, 0.2)
 # golpe: sub + crack + cola metálica
 n = int(2.6 * SR); t = tt(n); fsub = 32 + 80 * np.exp(-t * 8)
 sub = np.sin(2 * np.pi * np.cumsum(fsub) / SR) * np.exp(-t * 1.8)
@@ -48,7 +52,7 @@ for k, fr in enumerate((1760, 2349, 2637, 3520)):
 # tecleo digital por letra de ZENTRIX
 for k in range(7):
     n = int(0.08 * SR); t = tt(n); fr = 1400 + 160 * k
-    add(fade(np.sign(np.sin(2 * np.pi * fr * t)) * np.exp(-t * 60) * 0.12), T['word0'] + 0.08 + k * 0.095, 1.0, -0.6 + k * 0.2, 0.2)
+    add(fade(np.sign(np.sin(2 * np.pi * fr * t)) * np.exp(-t * 60) * 0.12), T['word0'] + k * (T['word1'] - T['word0']) / 8.5 + 0.12, 1.0, -0.6 + k * 0.2, 0.2)
 # STUDIO: whoosh suave y abierto
 n = int(0.7 * SR); x = tt(n) / 0.7; nz = rng.standard_normal(n)
 add(fade((onepole(nz, 2000 + 4000 * x) - onepole(nz, 900)) * np.sin(np.pi * x) * 0.35), T['stu0'] - 0.1, 1.0, 0, 0.4)
