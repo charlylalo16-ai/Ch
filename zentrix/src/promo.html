@@ -164,12 +164,11 @@ function teaser(c, t) {
   // 4) cierre
   const C = P.close, tp = prog(t, C.text), lg = E.outC(prog(t, C.logo));
   if (tp > 0) {
-    const tOut = E.inOutS(prog(t, [C.logo[0], C.logo[0] + 0.6])); c.save(); c.globalAlpha *= clamp(tp * 2) * (1 - tOut);
+    const tOut = E.inOutS(prog(t, C.text_out)); c.save(); c.globalAlpha *= clamp(tp * 2) * (1 - tOut);
     const msg = 'Algo grande se está construyendo', n = Math.floor(msg.length * E.outC(tp));
-    c.font = `${V ? 50 : 58}px Disp`; c.fillStyle = '#E6EDF3'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg.slice(0, n), CX, CY + (V ? -40 : -10)); c.restore();
+    c.font = `${V ? 58 : 70}px Disp`; c.fillStyle = "#E6EDF3"; c.textAlign = "center"; c.textBaseline = 'middle'; c.fillText(msg.slice(0, n), CX, CY + (V ? -40 : -10)); c.restore();
   }
   if (lg > 0) {
-    orbitRing(c, CX, V ? CY - 140 : CY - 70, V ? 470 : 640, V ? 150 : 190, -0.31, t, lg * 0.8);
     drawLogo(c, LOGO, CX, V ? CY - 140 : CY - 70, (V ? 760 : 620) * lerp(0.92, 1, lg), lg);
     proximamente(c, t, C.proximamente, V ? CY + 300 : CY + 330, V ? 64 : 72);
   }
