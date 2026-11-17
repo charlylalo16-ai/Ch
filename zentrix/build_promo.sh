@@ -6,7 +6,7 @@ for p in teaser carga; do
   [ -f build/$p.wav ] || python3 src/synth_promo.py $p build/$p.wav
   frames=$(python3 -c "import json; print(int(json.load(open('src/promo_data.json'))['$p']['dur']*60))"); per=$(( (frames + 3) / 4 ))
   for f in h v; do
-    tag=$([ $f = v ] && echo 9x16 || echo 16x9); o=out/zentrix_${p}_$tag.mp4; [ -f $o ] && continue
+    tag=$([ $f = v ] && echo 9x16 || echo 16x9); o=out/zentrix_systems_${p}_$tag.mp4; [ -f $o ] && continue
     : > build/list_${p}_$f.txt
     for k in 0 1 2 3; do PAGE=promo.html node src/render_promo.js segment $p $f build/pseg_${p}_${f}_$k.mkv $((k*per)) $(((k+1)*per)) & echo "file 'pseg_${p}_${f}_$k.mkv'" >> build/list_${p}_$f.txt; done; wait
     ffmpeg -y -loglevel error -f concat -safe 0 -i build/list_${p}_$f.txt -i build/$p.wav -map 0:v -map 1:a \

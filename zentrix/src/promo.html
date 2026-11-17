@@ -197,7 +197,7 @@ function carga(c, t) {
     c.restore();
     c.shadowColor = CYAN; c.shadowBlur = 24; c.fillStyle = '#fff'; c.beginPath(); c.arc(bx + jx + 4 + (bw - 8) * v, by + bh / 2, 5, 0, 7); c.fill(); c.shadowBlur = 0;
     const pct = Math.round(v * 100); c.font = `${V ? 30 : 30}px Mono`; c.textBaseline = 'middle';
-    const txt = gl && hash((t * 30) | 0) > 0.5 ? 'C4RG4ND0 ZΞNTR1X...' : 'CARGANDO ZENTRIX STUDIO...';
+    const txt = gl && hash((t * 30) | 0) > 0.5 ? 'C4RG4ND0 ZΞNTR1X SYST3MS...' : 'CARGANDO ZENTRIX SYSTEMS...';
     c.textAlign = 'left'; c.fillStyle = '#8B98A9'; c.fillText(txt, bx + jx, by - 40); c.textAlign = 'right'; c.fillStyle = '#E6EDF3'; c.font = `${V ? 34 : 34}px MonoB`; c.fillText(pct + '%', bx + bw + jx, by - 40);
     c.restore();
   }

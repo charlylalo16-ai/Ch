@@ -1,5 +1,5 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>ZENTRIX STUDIO · Intro</title>
+<html><head><meta charset="utf-8"><title>ZENTRIX SYSTEMS · Intro</title>
 <style>
 html,body{margin:0;background:#07080B;overflow:hidden}
 #bg,#fx{position:absolute;left:0;top:0}
@@ -26,7 +26,7 @@ const LWpx = V ? W * 0.86 : H * 0.84 * AR, LHpx = LWpx / AR;
 Object.assign(box.style, { width: LWpx + 'px', height: LHpx + 'px', left: (W - LWpx) / 2 + 'px', top: (H - LHpx) / 2 + (V ? -60 : 0) + 'px' });
 svg.removeAttribute('width'); svg.removeAttribute('height');
 const $ = id => svg.getElementById ? svg.getElementById(id) : svg.querySelector('#' + id);
-const L = { back: $('01-orbita-atras'), S: $('02-S'), Z: $('03-Z'), acc: $('04-acento'), front: $('05-orbita-frente'), word: $('06-ZENTRIX'), stu: $('07-STUDIO'), lines: $('08-lineas') };
+const L = { back: $('01-orbita-atras'), S: $('02-S'), Z: $('03-Z'), acc: $('04-acento'), front: $('05-orbita-frente'), word: $('06-ZENTRIX'), stu: ($('07-SYSTEMS') || $('07-STUDIO')), lines: $('08-lineas') };
 const backPath = L.back.querySelector('path'), frontPath = L.front.querySelector('path');
 const lenB = backPath.getTotalLength(), lenF = frontPath.getTotalLength();
 // contornos que se dibujan (copias sin relleno)
@@ -48,7 +48,7 @@ const cB = comet(backG), cF = comet(frontG);
 const letters = [...L.word.children];
 const bbOf = el => el.getBBox();
 const stuLetters = [...L.stu.children].length > 1 ? [...L.stu.children] : [L.stu];
-const linesBB = bbOf(L.lines), midX = VB.x + VB.width / 2;
+const linesBB = bbOf(L.lines), STB = bbOf(L.stu), midX = VB.x + VB.width / 2;
 const PARTS = Array.from({ length: 160 }, (_, i) => [hash(i * 3 + 1), hash(i * 5 + 2), hash(i * 7 + 3), hash(i * 11 + 4)]);
 
 function frame(t) {
@@ -91,7 +91,7 @@ function frame(t) {
   // ---- STUDIO: líneas crecen desde el centro y letras se acomodan
   const lp = E.inOutS(prog(t, T.stu0, T.stu1));
   L.lines.style.transformOrigin = `${midX}px ${linesBB.y + linesBB.height / 2}px`; L.lines.style.transform = `scaleX(${Math.max(0.001, lp)})`; L.lines.style.opacity = clamp(lp * 3);
-  const sp = E.outC(prog(t, T.stu0 + 0.3, T.stu1 + 0.3)); L.stu.style.opacity = sp; L.stu.style.transformOrigin = `${midX}px 810px`; L.stu.style.transform = `scale(${lerp(1.25, 1, sp)}, 1)`;
+  const sp = E.outC(prog(t, T.stu0 + 0.3, T.stu1 + 0.3)); L.stu.style.opacity = sp; L.stu.style.transformOrigin = `${midX}px ${STB.y + STB.height / 2}px`; L.stu.style.transform = `scale(${lerp(1.07, 1, sp)}, 1)`;
   // ---- golpe: destello + onda
   fc.clearRect(0, 0, W, H);
   if (t >= T.hit - 0.15) {
