@@ -1,0 +1,155 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>ZENTRIX · Redes</title>
+<style>
+@font-face{font-family:'Mono';src:url('file:///usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf')}
+@font-face{font-family:'MonoB';src:url('file:///usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Bold.ttf')}
+@font-face{font-family:'Disp';src:url('file:///usr/share/fonts/opentype/inter/InterDisplay-Bold.otf')}
+@font-face{font-family:'DispK';src:url('file:///usr/share/fonts/opentype/inter/InterDisplay-Black.otf')}
+@font-face{font-family:'Txt';src:url('file:///usr/share/fonts/opentype/inter/Inter-Medium.otf')}
+html,body{margin:0;background:#07080B}canvas{display:block}
+</style></head><body><canvas id="c"></canvas>
+<script src="../build/svg.js"></script>
+<script>
+// Piezas estáticas para redes. ?p=<pieza>. Todo en vector/código; el logo sale del SVG por capas del cliente.
+const PIECE = new URLSearchParams(location.search).get('p');
+const SIZES = { avatar: [1080, 1080], fb: [1640, 624], yt: [2560, 1440], li: [1584, 396],
+  post1: [1080, 1350], post2: [1080, 1350], post3: [1080, 1350], post4: [1080, 1350],
+  story1: [1080, 1920], story2: [1080, 1920], story3: [1080, 1920], story4: [1080, 1920] };
+const [W, H] = SIZES[PIECE]; const cv = document.getElementById('c'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
+const BLUE = '#1E6BFF', CYAN = '#3FB4FF', DEEP = '#0A35C9', BG = '#07080B';
+function hash(n) { let x = (Math.floor(n) | 0) ^ 0x9E3779B9; x = Math.imul(x ^ (x >>> 16), 0x85EBCA6B); x = Math.imul(x ^ (x >>> 13), 0xC2B2AE35); x ^= x >>> 16; return (x >>> 0) / 4294967296; }
+function rr(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+// ---- logo: completo o solo emblema, recortado a su contenido
+async function svgImage(keep) {
+  const doc = new DOMParser().parseFromString(window.SVGTXT, 'image/svg+xml'), s = doc.documentElement;
+  if (keep) [...s.querySelectorAll('g[id]')].forEach(g => { if (/^0\d-/.test(g.id) && !keep.includes(g.id.slice(0, 2))) g.remove(); });
+  s.setAttribute('width', 3180); s.setAttribute('height', 2640);
+  const img = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(s)); });
+  const t = document.createElement('canvas'); t.width = img.width; t.height = img.height; const x = t.getContext('2d'); x.drawImage(img, 0, 0);
+  const d = x.getImageData(0, 0, t.width, t.height).data; let x0 = t.width, y0 = t.height, x1 = 0, y1 = 0;
+  for (let y = 0; y < t.height; y += 2) for (let xx = 0; xx < t.width; xx += 2) if (d[(y * t.width + xx) * 4 + 3] > 8) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  const o = document.createElement('canvas'); o.width = x1 - x0 + 4; o.height = y1 - y0 + 4; o.getContext('2d').drawImage(t, -x0 + 2, -y0 + 2); return o;
+}
+let LOGO, EMB;
+const logoW = (img, cx, cy, w) => { const h = w * img.height / img.width; c.drawImage(img, cx - w / 2, cy - h / 2, w, h); return h; };
+const logoH = (img, cx, cy, h) => { const w = h * img.width / img.height; c.drawImage(img, cx - w / 2, cy - h / 2, w, h); return w; };
+// ---- fondo
+function background(gx = W / 2, gy = H / 2, glow = 0.18) {
+  c.fillStyle = BG; c.fillRect(0, 0, W, H);
+  const g = c.createRadialGradient(gx, gy, 10, gx, gy, Math.max(W, H) * 0.7); g.addColorStop(0, `rgba(30,107,255,${glow})`); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.strokeStyle = 'rgba(63,180,255,0.05)'; c.lineWidth = 1; const st = Math.round(Math.min(W, H) / 18);
+  for (let x = 0; x < W; x += st) { c.beginPath(); c.moveTo(x + .5, 0); c.lineTo(x + .5, H); c.stroke(); }
+  for (let y = 0; y < H; y += st) { c.beginPath(); c.moveTo(0, y + .5); c.lineTo(W, y + .5); c.stroke(); }
+  for (let i = 0; i < Math.round(W * H / 9000); i++) { const s = hash(i * 7 + 3); c.fillStyle = `rgba(90,160,255,${0.1 + 0.4 * s})`; c.beginPath(); c.arc(hash(i * 3 + 1) * W, hash(i * 5 + 2) * H, 0.8 + 2 * s, 0, 7); c.fill(); }
+}
+function orbit(cx, cy, rx, ry, rot, a = 0.5, dot = 0.3) {
+  c.save(); c.translate(cx, cy); c.rotate(rot); c.strokeStyle = `rgba(30,107,255,${a})`; c.lineWidth = Math.max(2, rx / 220); c.shadowColor = BLUE; c.shadowBlur = 16;
+  c.beginPath(); c.ellipse(0, 0, rx, ry, 0, 0, 7); c.stroke();
+  const ang = Math.PI * 2 * dot; c.shadowColor = CYAN; c.shadowBlur = 24; c.fillStyle = '#fff'; c.beginPath(); c.arc(Math.cos(ang) * rx, Math.sin(ang) * ry, Math.max(4, rx / 90), 0, 7); c.fill(); c.restore();
+}
+function spaced(txt, x, y, size, font, col, tr, align = 'center') {
+  c.font = `${size}px ${font}`; const w = [...txt].reduce((s, ch) => s + c.measureText(ch).width, 0) + tr * (txt.length - 1);
+  let xx = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x; c.fillStyle = col; c.textBaseline = 'middle'; c.textAlign = 'left';
+  for (const ch of txt) { c.fillText(ch, xx, y); xx += c.measureText(ch).width + tr; } return w;
+}
+function wrap(txt, maxW, size, font) { c.font = `${size}px ${font}`; const L = []; let cur = ''; for (const w of txt.split(' ')) { const t = cur ? cur + ' ' + w : w; if (c.measureText(t).width > maxW && cur) { L.push(cur); cur = w; } else cur = t; } L.push(cur); return L; }
+function chip(txt, x, y, size, align = 'left') {
+  c.font = `${size}px MonoB`; const w = c.measureText(txt).width + size * 1.6, h = size * 2; const x0 = align === 'center' ? x - w / 2 : x;
+  rr(x0, y - h / 2, w, h, h / 2); c.fillStyle = 'rgba(30,107,255,0.15)'; c.fill(); c.strokeStyle = 'rgba(63,180,255,0.6)'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = CYAN; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, x0 + w / 2, y + 1); c.textAlign = 'left';
+}
+function services(cx, y, size, items = ['APPS', 'SITIOS WEB', 'SISTEMAS']) {
+  const sep = '  ·  '; const txt = items.join(sep); spaced(txt, cx, y, size, 'DispK', '#C9D6E8', size * 0.18);
+}
+// ---- maquetas (mismo estilo del teaser)
+function phone(cx, cy, h) {
+  const w = h * 0.49, x = cx - w / 2, y = cy - h / 2, r = h * 0.07, u = h / 100;
+  c.save(); c.shadowColor = 'rgba(30,107,255,0.5)'; c.shadowBlur = 60; rr(x - 10, y - 10, w + 20, h + 20, r + 8); c.fillStyle = '#10141B'; c.fill(); c.restore();
+  c.strokeStyle = 'rgba(160,190,230,0.5)'; c.lineWidth = 2; rr(x - 10, y - 10, w + 20, h + 20, r + 8); c.stroke();
+  c.save(); c.textAlign = 'left'; rr(x, y, w, h, r); c.clip(); c.fillStyle = '#0B0F16'; c.fillRect(x, y, w, h);
+  const B = [[0, 0, 100, 16, BLUE, 0], [8, 21, 84, 22, 'grad', 4], [8, 47, 40, 15, '#1B2433', 3], [52, 47, 40, 15, '#1B2433', 3], [8, 66, 84, 6, '#1B2433', 2], [8, 75, 84, 6, '#1B2433', 2], [0, 90, 100, 10, '#121925', 0]];
+  for (const [bx, by, bw, bh, col, br] of B) { rr(x + bx / 100 * w + 2, y + by * u + 2, bw / 100 * w - 4, bh * u - 4, br * u);
+    if (col === 'grad') { const g = c.createLinearGradient(x, y + 21 * u, x + w, y + 43 * u); g.addColorStop(0, CYAN); g.addColorStop(1, DEEP); c.fillStyle = g; } else c.fillStyle = col; c.fill(); }
+  c.fillStyle = '#fff'; c.font = `${4.2 * u}px Disp`; c.textBaseline = 'middle'; c.fillText('Tu App', x + 0.08 * w, y + 8 * u);
+  c.font = `${3.6 * u}px Disp`; c.fillText('Bienvenido', x + 0.14 * w, y + 30 * u); c.font = `${2.6 * u}px Txt`; c.fillText('Tu negocio en tu bolsillo', x + 0.14 * w, y + 36 * u);
+  [17, 58, 83].forEach((px, i) => { c.fillStyle = i ? '#5C6B82' : CYAN; c.beginPath(); c.arc(x + px / 100 * w, y + 95 * u, 1.6 * u, 0, 7); c.fill(); });
+  c.restore();
+}
+function laptop(cx, cy, w) {
+  const h = w * 0.6, x = cx - w / 2, y = cy - h / 2;
+  c.save(); c.shadowColor = 'rgba(30,107,255,0.45)'; c.shadowBlur = 60; rr(x - 14, y - 14, w + 28, h + 28, 16); c.fillStyle = '#10141B'; c.fill(); c.restore();
+  c.strokeStyle = 'rgba(160,190,230,0.5)'; c.lineWidth = 2; rr(x - 14, y - 14, w + 28, h + 28, 16); c.stroke();
+  c.fillStyle = '#1A202A'; c.beginPath(); c.moveTo(x - w * 0.12, y + h + 14); c.lineTo(x + w * 1.12, y + h + 14); c.lineTo(x + w * 1.07, y + h + 14 + w * 0.045); c.lineTo(x - w * 0.07, y + h + 14 + w * 0.045); c.closePath(); c.fill();
+  c.save(); rr(x, y, w, h, 6); c.clip(); c.fillStyle = '#0B0F16'; c.fillRect(x, y, w, h);
+  const B = [[0, 0, 100, 10, '#121925'], [6, 18, 50, 9, '#E6EDF3'], [6, 30, 36, 5, '#5C6B82'], [6, 40, 20, 8, BLUE], [60, 16, 34, 44, 'grad'], [6, 66, 27, 26, '#1B2433'], [36.5, 66, 27, 26, '#1B2433'], [67, 66, 27, 26, '#1B2433']];
+  for (const [bx, by, bw, bh, col] of B) { rr(x + bx / 100 * w + 2, y + by / 100 * h + 2, bw / 100 * w - 4, bh / 100 * h - 4, 6);
+    if (col === 'grad') { const g = c.createLinearGradient(x + 0.6 * w, y, x + w, y + 0.6 * h); g.addColorStop(0, CYAN); g.addColorStop(1, DEEP); c.fillStyle = g; } else c.fillStyle = col; c.fill(); }
+  c.restore();
+}
+const CODE = [[['k', 'const'], ['w', ' proyecto = '], ['f', 'crear'], ['w', '({']], [['w', '  diseño: '], ['s', "'a tu medida'"], ['w', ',']], [['w', '  plataformas: ['], ['s', "'iOS'"], ['w', ', '], ['s', "'Web'"], ['w', '],']], [['w', '  estado: '], ['s', "'en desarrollo'"]], [['w', '});']], [], [['m', '// Hecho por ZENTRIX SYSTEMS']]];
+const COLS = { k: '#5AA9FF', w: '#E6EDF3', s: '#9BE7A6', f: '#F2C46D', m: '#6B7A90' };
+function editor(x, y, w, fs) {
+  const lh = fs * 1.6, h = 56 + 40 + CODE.length * lh + 20;
+  c.save(); c.shadowColor = 'rgba(30,107,255,0.4)'; c.shadowBlur = 50; rr(x, y, w, h, 22); c.fillStyle = '#0D1117'; c.fill(); c.restore();
+  c.strokeStyle = 'rgba(63,180,255,0.35)'; c.lineWidth = 2; rr(x, y, w, h, 22); c.stroke();
+  c.save(); rr(x, y, w, 56, 22); c.clip(); c.fillStyle = '#151B23'; c.fillRect(x, y, w, 56); c.restore();
+  ['#FF5F57', '#FEBC2E', '#28C840'].forEach((col, i) => { c.fillStyle = col; c.beginPath(); c.arc(x + 32 + i * 26, y + 28, 8, 0, 7); c.fill(); });
+  c.font = '22px Mono'; c.fillStyle = '#8B98A9'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('proyecto.ts', x + w / 2, y + 28); c.textAlign = 'left';
+  CODE.forEach((line, i) => { let xx = x + 34; const yy = y + 96 + i * lh; for (const [k, txt] of line) { c.font = `${fs}px ${k === 'k' || k === 'f' ? 'MonoB' : 'Mono'}`; c.fillStyle = COLS[k]; c.fillText(txt, xx, yy); xx += c.measureText(txt).width; } });
+  return h;
+}
+
+// ---- piezas
+const POSTS = {
+  1: { kick: 'APPS MÓVILES', title: '¿Tu negocio aún no tiene app?', sub: 'La diseñamos y la creamos para iOS y Android.', vis: 'phone' },
+  2: { kick: 'SITIOS WEB', title: 'Tu sitio web, trabajando 24/7', sub: 'Que tus clientes te encuentren y te contacten a cualquier hora.', vis: 'laptop' },
+  3: { kick: 'A TU MEDIDA', title: 'Diseño + desarrollo a tu medida', sub: 'Apps, sitios web y sistemas hechos para tu negocio.', vis: 'code' },
+  4: { kick: 'MUY PRONTO', title: 'Muy pronto: ZENTRIX SYSTEMS', sub: 'Apps · Sitios web · Sistemas', vis: 'logo' },
+};
+function post(n, story) {
+  const P = POSTS[n]; background(W / 2, story ? H * 0.62 : H * 0.6, 0.2);
+  const m = 80, top = story ? 230 : 110;
+  logoH(LOGO, W / 2, top, story ? 150 : 120);
+  if (P.vis === 'logo') {
+    const ly = H * (story ? 0.47 : 0.44), lw = story ? 760 : 640; orbit(W / 2, ly, lw * 0.62, lw * 0.2, -0.31, 0.45, 0.82); logoW(LOGO, W / 2, ly, lw);
+    const py = H * (story ? 0.67 : 0.715); spaced('PRÓXIMAMENTE', W / 2, py, 76, 'DispK', '#F2F3F5', 22); c.fillStyle = BLUE; c.fillRect(W / 2 - 220, py + 64, 440, 5);
+    services(W / 2, H * (story ? 0.76 : 0.8), 34);
+  } else {
+    const ty = story ? 420 : 270; chip(P.kick, W / 2, ty, 26, 'center');
+    const L = wrap(P.title, W - 2 * m, story ? 92 : 86, 'DispK'), ts = story ? 92 : 86;
+    L.forEach((ln, i) => { c.font = `${ts}px DispK`; c.fillStyle = '#F2F3F5'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ln, W / 2, ty + 120 + i * ts * 1.1); });
+    const sy = ty + 120 + L.length * ts * 1.1 + 20; const S = wrap(P.sub, W - 2 * m - 60, 36, 'Txt');
+    S.forEach((ln, i) => { c.font = '36px Txt'; c.fillStyle = '#A9B6C8'; c.fillText(ln, W / 2, sy + i * 50); });
+    const vy = sy + S.length * 50 + (story ? 120 : 40), avail = H - vy - (story ? 300 : 150);
+    if (P.vis === 'phone') phone(W / 2, vy + avail / 2, Math.min(avail, story ? 760 : 560));
+    if (P.vis === 'laptop') laptop(W / 2, vy + avail / 2 - 20, Math.min(W - 220, avail * 1.4));
+    if (P.vis === 'code') editor(110, vy + Math.max(0, (avail - 470) / 2), W - 220, 31);
+    spaced('PRÓXIMAMENTE', W / 2, H - (story ? 240 : 100), 40, 'DispK', CYAN, 14);
+  }
+  c.textAlign = 'left';
+}
+function avatar() {
+  background(W / 2, H / 2, 0.28);
+  logoW(EMB, W / 2, H / 2 + 10, W * 0.66);
+}
+function banner(safeW, safeH, logoHgt, align) {   // contenido dentro de la zona segura centrada
+  background(W / 2, H / 2, 0.22); orbit(W / 2, H / 2, safeW * 0.42, safeH * 0.5, -0.12, 0.25, 0.15);
+  const cx = W / 2, cy = H / 2;
+  const lw = logoH(LOGO, cx - safeW * 0.24, cy, logoHgt);
+  const tx = cx - safeW * 0.24 + lw / 2 + safeW * 0.06;
+  const avail = cx + safeW / 2 - tx; let hs = logoHgt * 0.2; c.font = `${hs}px DispK`; while (c.measureText('Creamos tu app y tu sitio web').width > avail && hs > 10) { hs *= 0.95; c.font = `${hs}px DispK`; }
+  c.fillStyle = '#F2F3F5'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText('Creamos tu app y tu sitio web', tx, cy - logoHgt * 0.17);
+  spaced('APPS  ·  SITIOS WEB  ·  SISTEMAS', tx, cy + logoHgt * 0.06, logoHgt * 0.085, 'DispK', '#9FB3CC', logoHgt * 0.015, 'left');
+  chip('PRÓXIMAMENTE', tx, cy + logoHgt * 0.3, logoHgt * 0.065);
+}
+const RUN = {
+  avatar, fb: () => banner(1100, 420, 330), yt: () => banner(1546, 423, 360), li: () => banner(1100, 300, 230),
+  post1: () => post(1), post2: () => post(2), post3: () => post(3), post4: () => post(4),
+  story1: () => post(1, true), story2: () => post(2, true), story3: () => post(3, true), story4: () => post(4, true),
+};
+(async () => {
+  await Promise.all(['40px Mono', '40px MonoB', '40px Disp', '40px DispK', '40px Txt'].map(f => document.fonts.load(f, 'ÁÓ¿')));
+  LOGO = await svgImage(); EMB = await svgImage(['01', '02', '03', '04', '05']);
+  RUN[PIECE](); window.done = true;
+})();
+</script></body></html>

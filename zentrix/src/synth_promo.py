@@ -67,6 +67,20 @@ if piece == 'teaser':
     add(boom(), D['close']['logo'][0], 0.9, 0, 0.3)
     for k, fr in enumerate((587, 880, 1175)): add(bell(fr, 2.5), D['close']['proximamente'][0] + k * 0.12, 0.8, -0.3 + k * 0.3, 0.7)
     add(pad([50, 57, 62, 65, 69], DUR - D['close']['logo'][0], 2500), D['close']['logo'][0], 1.2, 0, 0.6)
+elif piece == 'portafolio':
+    add(pad([38, 45, 50, 53, 57], DUR), 0, 1.0, 0, 0.5)
+    for k, fr in enumerate((880, 1175, 1318)): add(bell(fr), D['intro'][0] + 0.4 + k * 0.3, 0.7, -0.3 + k * 0.3, 0.6)
+    t0 = D['q'][0]
+    while t0 < D['close'][0] - 0.3: add(kick(), t0, 0.5); t0 += BEAT
+    t0 = D['q'][0] + BEAT / 2
+    while t0 < D['close'][0] - 0.3: add(tick(3000), t0, 0.12, 0.3); t0 += BEAT
+    for s_ in D['whoosh']: add(whoosh(), s_ - 0.45, 0.6, 0, 0.3)
+    per = (D['q'][1] - D['q'][0] - 1.6) / 8
+    for k in range(1, 8): add(tick(1500), D['q'][0] + 0.8 + k * per, 0.3, 0.5)          # cambio de pantalla
+    n = int(1.6 * SR); x = tt(n) / 1.6; nz = rng.standard_normal(n)
+    add(fade((lp(nz, 200 * (9000 / 200) ** (x ** 1.5)) - lp(nz, 150)) * x ** 2 * 0.5, 0.05, 0.01), D['logo'][0] - 1.6, 0.6, 0, 0.3)
+    add(boom(), D['logo'][0], 0.9, 0, 0.3)
+    for k, fr in enumerate((587, 880, 1175)): add(bell(fr, 2.5), D['prox'][0] + k * 0.12, 0.8, -0.3 + k * 0.3, 0.7)
 else:
     add(pad([38, 45, 50, 53], DUR), 0, 1.0, 0, 0.5)
     a, b = D['bar']; n = int((b - a) * SR); t = tt(n); x = t / (b - a)

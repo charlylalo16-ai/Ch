@@ -1,0 +1,149 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>ZENTRIX · Portafolio</title>
+<style>
+@font-face{font-family:'Mono';src:url('file:///usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf')}
+@font-face{font-family:'MonoB';src:url('file:///usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Bold.ttf')}
+@font-face{font-family:'Disp';src:url('file:///usr/share/fonts/opentype/inter/InterDisplay-Bold.otf')}
+@font-face{font-family:'DispK';src:url('file:///usr/share/fonts/opentype/inter/InterDisplay-Black.otf')}
+@font-face{font-family:'Txt';src:url('file:///usr/share/fonts/opentype/inter/Inter-Medium.otf')}
+html,body{margin:0;background:#07080B;overflow:hidden}canvas{display:block}
+</style></head><body><canvas id="c"></canvas>
+<script src="../build/svg.js"></script><script src="../build/promo_data.js"></script>
+<script>
+// Portafolio: proyectos reales (Quiroga Digital con datos de demostración, Tacos El Chiquilín).
+const Q = new URLSearchParams(location.search), V = (Q.get('fmt') || 'h') === 'v';
+const P = window.PD.portafolio, DUR = P.dur, FPS = 60, W = V ? 1080 : 1920, H = V ? 1920 : 1080, CX = W / 2, CY = H / 2;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const out = cv.getContext('2d');
+const mk = (w = W, h = H) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const sceneCv = mk(), accCv = mk(), sc = sceneCv.getContext('2d'), acc = accCv.getContext('2d');
+const BLUE = '#1E6BFF', CYAN = '#3FB4FF', BG = '#07080B';
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t, prog = (t, [a, b]) => clamp((t - a) / (b - a));
+const E = { outC: t => 1 - Math.pow(1 - t, 3), inOutS: t => -(Math.cos(Math.PI * t) - 1) / 2, outBack: (t, s = 1.4) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2) };
+function hash(n) { let x = (Math.floor(n) | 0) ^ 0x9E3779B9; x = Math.imul(x ^ (x >>> 16), 0x85EBCA6B); x = Math.imul(x ^ (x >>> 13), 0xC2B2AE35); x ^= x >>> 16; return (x >>> 0) / 4294967296; }
+function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+const IMG = {}; const load = (k, src) => new Promise(r => { const i = new Image(); i.onload = () => { IMG[k] = i; r(); }; i.src = src; });
+async function svgLogo() {
+  const s = new DOMParser().parseFromString(window.SVGTXT, 'image/svg+xml').documentElement; s.setAttribute('width', 2120); s.setAttribute('height', 1760);
+  const img = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(s)); });
+  const t = mk(img.width, img.height), x = t.getContext('2d'); x.drawImage(img, 0, 0); const d = x.getImageData(0, 0, t.width, t.height).data; let a = t.width, b = t.height, cc = 0, dd = 0;
+  for (let y = 0; y < t.height; y += 2) for (let xx = 0; xx < t.width; xx += 2) if (d[(y * t.width + xx) * 4 + 3] > 8) { a = Math.min(a, xx); cc = Math.max(cc, xx); b = Math.min(b, y); dd = Math.max(dd, y); }
+  const o = mk(cc - a + 4, dd - b + 4); o.getContext('2d').drawImage(t, -a + 2, -b + 2); return o;
+}
+const drawW = (c, img, cx, cy, w, a = 1) => { if (a <= 0) return; const h = w * img.height / img.width; c.save(); c.globalAlpha *= a; c.drawImage(img, cx - w / 2, cy - h / 2, w, h); c.restore(); return h; };
+const PARTS = Array.from({ length: 140 }, (_, i) => [hash(i * 3 + 1), hash(i * 5 + 2), hash(i * 7 + 3), hash(i * 11 + 4)]);
+function background(c, t, amt) {
+  c.fillStyle = BG; c.fillRect(0, 0, W, H);
+  const g = c.createRadialGradient(CX, CY, 10, CX, CY, Math.max(W, H) * 0.75); g.addColorStop(0, `rgba(30,107,255,${0.14 * amt})`); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.strokeStyle = `rgba(63,180,255,${0.045 * amt})`; c.lineWidth = 1; const st = 60, off = (t * 8) % st;
+  for (let x = -st + off; x < W; x += st) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+  for (let y = -st + off; y < H; y += st) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+  c.save(); c.globalCompositeOperation = 'lighter';
+  for (const [a, b, s, k] of PARTS) { const x = ((a * W + t * (10 + 30 * k)) % (W + 40)) - 20, y = ((b * H - t * (5 + 20 * s)) % H + H) % H;
+    c.fillStyle = `rgba(90,160,255,${(0.1 + 0.4 * s) * amt})`; c.beginPath(); c.arc(x, y, 1 + 2 * s, 0, 7); c.fill(); }
+  c.restore();
+}
+function spaced(c, txt, x, y, font, col, tr, align = 'center') {
+  c.font = font; const w = [...txt].reduce((s, ch) => s + c.measureText(ch).width, 0) + tr * (txt.length - 1);
+  let xx = align === 'center' ? x - w / 2 : x; c.fillStyle = col; c.textBaseline = 'middle'; c.textAlign = 'left'; for (const ch of txt) { c.fillText(ch, xx, y); xx += c.measureText(ch).width + tr; } return w;
+}
+function chip(c, txt, x, y, size, align) {
+  c.font = `${size}px MonoB`; const w = c.measureText(txt).width + size * 1.6, h = size * 2, x0 = align === 'center' ? x - w / 2 : x;
+  rr(c, x0, y - h / 2, w, h, h / 2); c.fillStyle = 'rgba(30,107,255,0.15)'; c.fill(); c.strokeStyle = 'rgba(63,180,255,0.6)'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = CYAN; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, x0 + w / 2, y + 1); c.textAlign = 'left'; return w;
+}
+function phoneFrame(c, cx, cy, h, drawScreen) {
+  const w = h * 9 / 16 * 1.0, x = cx - w / 2, y = cy - h / 2, r = h * 0.06;
+  c.save(); c.shadowColor = 'rgba(30,107,255,0.5)'; c.shadowBlur = 60; rr(c, x - 12, y - 12, w + 24, h + 24, r + 10); c.fillStyle = '#10141B'; c.fill(); c.restore();
+  c.strokeStyle = 'rgba(160,190,230,0.55)'; c.lineWidth = 2; rr(c, x - 12, y - 12, w + 24, h + 24, r + 10); c.stroke();
+  c.save(); rr(c, x, y, w, h, r); c.clip(); c.fillStyle = '#000'; c.fillRect(x, y, w, h); drawScreen(x, y, w, h); c.restore();
+  c.fillStyle = '#05070B'; c.beginPath(); c.arc(cx, y + h * 0.025, h * 0.009, 0, 7); c.fill();
+}
+// bloque de texto de cada proyecto
+function project(c, t, win, d, x, y, align, maxW) {
+  const p = E.outC(prog(t, [win[0], win[0] + 0.9])), o = E.inOutS(prog(t, [win[1] - 0.6, win[1]])); if (p <= 0 || o >= 1) return;
+  c.save(); c.globalAlpha *= (1 - o); const dx = (1 - p) * (align === 'center' ? 0 : -60), dy = align === 'center' ? (1 - p) * 40 : 0;
+  c.translate(dx, dy);
+  chip(c, d.chip, x, y, V ? 24 : 24, align);
+  const ts = V ? 84 : 92; c.font = `${ts}px DispK`; c.fillStyle = '#F2F3F5'; c.textAlign = align === 'center' ? 'center' : 'left'; c.textBaseline = 'middle';
+  c.fillText(d.title, x, y + ts * 1.15);
+  c.font = `${V ? 34 : 34}px Txt`; c.fillStyle = '#A9B6C8'; c.fillText(d.sub, x, y + ts * 1.15 + 74);
+  d.items.forEach((it, i) => {
+    const q = E.outC(prog(t, [win[0] + 0.6 + i * 0.25, win[0] + 1.2 + i * 0.25])); if (q <= 0) return;
+    const yy = y + ts * 1.15 + 150 + i * (V ? 58 : 62); c.save(); c.globalAlpha *= q;
+    c.font = `${V ? 34 : 36}px Disp`; const tw = c.measureText(it).width; const bx = align === 'center' ? x - tw / 2 - 30 : x;
+    c.fillStyle = CYAN; c.beginPath(); c.arc(bx + 9, yy, 7, 0, 7); c.fill(); c.fillStyle = '#E6EDF3'; c.textAlign = 'left'; c.fillText(it, bx + 30, yy); c.restore();
+  });
+  c.restore(); c.textAlign = 'left';
+}
+function frame(c, t) {
+  const fade = 1 - E.inOutS(prog(t, P.fade)); background(c, t, clamp(t / 1.2) * fade);
+  c.save(); c.globalAlpha = fade;
+  // 1) intro
+  const ip = E.outC(prog(t, P.intro)), io = E.inOutS(prog(t, P.intro_out));
+  if (ip > 0 && io < 1) {
+    c.save(); c.globalAlpha *= (1 - io); drawW(c, IMG.logo, CX, CY - (V ? 190 : 150), (V ? 420 : 360) * lerp(0.94, 1, ip), ip);
+    const msg = 'PROYECTOS QUE HEMOS CREADO', n = Math.floor(msg.length * E.outC(prog(t, [P.intro[0] + 0.4, P.intro[1] + 0.6])));
+    spaced(c, msg.slice(0, n), CX, CY + (V ? 60 : 90), `${V ? 50 : 64}px DispK`, '#F2F3F5', V ? 6 : 10);
+    c.fillStyle = BLUE; const lw = lerp(0, V ? 240 : 380, E.inOutS(prog(t, [P.intro[0] + 0.8, P.intro[1] + 0.8]))); c.fillRect(CX - lw, CY + (V ? 120 : 160), lw * 2, 4); c.restore();
+  }
+  // marca pequeña arriba durante los proyectos
+  const bm = prog(t, [P.q[0], P.q[0] + 0.6]) * (1 - prog(t, [P.close[0] - 0.4, P.close[0]])); if (bm > 0) drawW(c, IMG.logo, V ? CX : 170, V ? 110 : 80, V ? 150 : 140, bm * 0.9);
+  // 2) Quiroga Digital
+  const qp = E.outC(prog(t, [P.q[0], P.q[0] + 1.0])), qo = E.inOutS(prog(t, [P.q[1] - 0.6, P.q[1]]));
+  if (qp > 0 && qo < 1) {
+    const ph = V ? 980 : 820, pcx = V ? CX : 1380, pcy = V ? 1330 : CY + 20;
+    c.save(); c.globalAlpha *= (1 - qo); c.translate((1 - qp) * (V ? 0 : 400), (1 - qp) * (V ? 400 : 0) - qo * 80);
+    const N = 8, per = (P.q[1] - P.q[0] - 1.6) / N, lt = Math.max(0, t - P.q[0] - 0.8), k = Math.min(N - 1, Math.floor(lt / per)), tr = clamp((lt - k * per) / 0.35);
+    phoneFrame(c, pcx, pcy, ph, (x, y, w, h) => {
+      const a = IMG['q' + (k + 1)], b = IMG['q' + Math.max(1, k)];
+      if (k > 0 && tr < 1) { const e = E.inOutS(tr); c.drawImage(b, x - e * w * 0.3, y, w, h); c.fillStyle = `rgba(0,0,0,${0.3 * e})`; c.fillRect(x, y, w, h); c.drawImage(a, x + (1 - e) * w, y, w, h); }
+      else c.drawImage(a, x, y, w, h);
+    });
+    { const ia = E.outBack(prog(t, [P.q[0] + 0.7, P.q[0] + 1.3])); if (ia > 0) { const isz = (V ? 150 : 130) * ia, ix = pcx + ph * 0.32, iy = pcy - ph * 0.43;
+      c.save(); c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = 24; rr(c, ix - isz / 2, iy - isz / 2, isz, isz, isz * 0.22); c.fillStyle = '#fff'; c.fill(); c.shadowBlur = 0; c.clip(); c.drawImage(IMG.qicon, ix - isz / 2, iy - isz / 2, isz, isz); c.restore(); } }
+    c.restore();
+    project(c, t, P.q, P.q_txt, V ? CX : 140, V ? 300 : 300, V ? 'center' : 'left');
+  }
+  // 3) Tacos El Chiquilín
+  const cp = E.outC(prog(t, [P.ch[0], P.ch[0] + 1.0])), co = E.inOutS(prog(t, [P.ch[1] - 0.6, P.ch[1]]));
+  if (cp > 0 && co < 1) {
+    const ph = V ? 980 : 820, pcx = V ? CX - 90 : 1330, pcy = V ? 1330 : CY + 20;
+    c.save(); c.globalAlpha *= (1 - co); c.translate((1 - cp) * (V ? 0 : 400), (1 - cp) * (V ? 400 : 0) - co * 80);
+    const fi = clamp(Math.floor((t - P.ch[0]) * 30), 0, 239) + 1;
+    phoneFrame(c, pcx, pcy, ph, (x, y, w, h) => { const im = IMG['ch' + fi]; if (im) c.drawImage(im, x, y, w, h); });
+    // etiqueta de salsa y logo flotando
+    const sp = E.outBack(prog(t, [P.ch[0] + 1.0, P.ch[0] + 1.6]));
+    if (sp > 0) { c.save(); c.translate(pcx + ph * (V ? 0.36 : 0.42), pcy + ph * 0.26); c.rotate(0.12 + Math.sin(t * 1.5) * 0.02); c.scale(sp, sp); c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = 30; drawW(c, IMG.salsa, 0, 0, V ? 360 : 380); c.restore(); }
+    drawW(c, IMG.chlogo, pcx + ph * 0.32, pcy - ph * 0.40, V ? 230 : 220, E.outBack(prog(t, [P.ch[0] + 0.7, P.ch[0] + 1.3])));
+    c.restore();
+    project(c, t, P.ch, P.ch_txt, V ? CX : 140, V ? 300 : 300, V ? 'center' : 'left');
+  }
+  // 4) cierre
+  const cl = prog(t, P.close);
+  if (cl > 0) {
+    const msg = 'Tu negocio puede ser el siguiente', n = Math.floor(msg.length * E.outC(prog(t, [P.close[0], P.close[0] + 1.2])));
+    const mo = E.inOutS(prog(t, P.close_text_out)); c.save(); c.globalAlpha *= (1 - mo);
+    c.font = `${V ? 60 : 72}px Disp`; c.fillStyle = '#E6EDF3'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg.slice(0, n), CX, CY); c.restore();
+    const lg = E.outC(prog(t, P.logo)); if (lg > 0) {
+      drawW(c, IMG.logo, CX, V ? CY - 140 : CY - 70, (V ? 760 : 620) * lerp(0.92, 1, lg), lg);
+      const pp = prog(t, P.prox); if (pp > 0) { const e = E.outC(pp), sz = V ? 64 : 72; c.save(); c.globalAlpha *= clamp(pp * 1.6); c.shadowColor = BLUE; c.shadowBlur = 20;
+        spaced(c, 'PRÓXIMAMENTE', CX, V ? CY + 300 : CY + 330, `${sz}px DispK`, '#F2F3F5', lerp(sz * 0.9, sz * 0.32, e)); c.restore();
+        c.fillStyle = BLUE; const lw = lerp(0, V ? 260 : 420, E.inOutS(clamp((pp - 0.3) / 0.7))); c.fillRect(CX - lw, (V ? CY + 300 : CY + 330) + sz * 0.85, lw * 2, 4); }
+    }
+  }
+  c.restore();
+}
+async function renderFrame(f) {
+  const t = f / FPS, n = 3, sh = 0.5 / FPS;
+  for (let i = 0; i < n; i++) { sc.setTransform(1, 0, 0, 1, 0, 0); sc.globalAlpha = 1; frame(sc, clamp(t + (i / (n - 1) - 0.5) * sh, 0, DUR - 1e-3)); acc.globalAlpha = 1 / (i + 1); acc.drawImage(sceneCv, 0, 0); }
+  acc.globalAlpha = 1; out.drawImage(accCv, 0, 0);
+}
+window.renderFrame = renderFrame; window.NFRAMES = Math.round(DUR * FPS);
+window.ready = (async () => {
+  await Promise.all(['40px Mono', '40px MonoB', '40px Disp', '40px DispK', '40px Txt'].map(f => document.fonts.load(f, 'ÁÓíñ')));
+  IMG.logo = await svgLogo(); const B = '../build/port/', L = [load('qicon', B + 'quiroga_icon.png'), load('chlogo', B + 'chiquilin_logo.png'), load('salsa', B + 'salsa.png')];
+  for (let i = 1; i <= 8; i++) L.push(load('q' + i, B + 'q/' + i + '.jpg'));
+  for (let i = 1; i <= 240; i++) L.push(load('ch' + i, B + 'ch/f_' + String(i).padStart(3, '0') + '.jpg'));
+  await Promise.all(L); return true;
+})();
+</script></body></html>
