@@ -39,11 +39,11 @@ boy = boy & (cv2.dilate(core, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 
 n, lab, st, _ = cv2.connectedComponentsWithStats(boy.astype(np.uint8)); boy = lab == (1 + np.argmax(st[1:, cv2.CC_STAT_AREA]))
 bf = boy.astype(np.uint8) * 255; pad = np.zeros((H + 2, W + 2), np.uint8); cv2.floodFill(bf, pad, (0, 0), 128); boy = bf != 128   # rellenar huecos internos
 # pelo: en el original la parte de arriba/izquierda la tapaba el círculo rojo -> se reconstruye un domo liso
-pts = np.array([(919, 335), (916, 260), (926, 190), (952, 132), (998, 92), (1065, 68), (1145, 64), (1220, 80), (1270, 108)], np.float64)
+pts = np.array([(921, 352), (909, 310), (903, 255), (909, 200), (930, 148), (965, 108), (1005, 84), (1065, 68), (1145, 64), (1220, 80), (1270, 108)], np.float64)
 tt_ = np.linspace(0, 1, len(pts)); ts = np.linspace(0, 1, 200)
 curve = np.stack([np.interp(ts, tt_, pts[:, 0]), np.interp(ts, tt_, pts[:, 1])], 1)
 curve = cv2.GaussianBlur(curve.reshape(-1, 1, 2).astype(np.float32), (1, 31), 0).reshape(-1, 2); curve[0], curve[-1] = pts[0], pts[-1]
-dome = np.zeros((H, W), np.uint8); cv2.fillPoly(dome, [np.vstack([curve, [(1270, 300), (960, 300)]]).astype(np.int32)], 1)
+dome = np.zeros((H, W), np.uint8); cv2.fillPoly(dome, [np.vstack([curve, [(1270, 300), (960, 360)]]).astype(np.int32)], 1)
 hairpx = boy & (vv < 90) & (np.arange(H)[:, None] < 300)
 hair_col = np.median(a[hairpx][:, :3], 0).astype(np.uint8)
 add = (dome > 0) & ~boy
