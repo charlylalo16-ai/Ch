@@ -112,6 +112,20 @@ def pill(im, txt, cx, cy, size, bg, fg):
     d.rounded_rectangle([cx - w / 2 + size * .12, cy - h / 2 + size * .18, cx + w / 2 + size * .12, cy + h / 2 + size * .18], h / 2, fill=INK)
     d.rounded_rectangle([cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2], h / 2, fill=bg, outline=INK, width=max(3, int(size * .1)))
     d.text((cx, cy + size * .04), txt, font=f, fill=fg, anchor='mm')
+LOGO_G = os.path.join(HERE, '..', 'src', 'brand', 'logo_gomitas.png')
+def logo_g(im, cx, cy, h):
+    """Logo de gomitas (el del cliente) con borde blanco tipo sticker y sombra suave."""
+    import numpy as np, cv2
+    lg = Image.open(LOGO_G).convert('RGBA'); lg = lg.resize((int(h), int(h)), Image.LANCZOS)
+    r = max(4, int(h / 45)); P = r * 3
+    a = np.pad(np.array(lg)[..., 3] > 100, P)
+    ff = a.astype(np.uint8) * 255; ff = np.pad(ff, 1); cv2.floodFill(ff, None, (0, 0), 128); a |= ff[1:-1, 1:-1] == 0
+    ring = cv2.distanceTransform((~a).astype(np.uint8), cv2.DIST_L2, 5) <= r
+    ring = cv2.GaussianBlur(ring.astype(np.float32), (0, 0), 1.0)
+    st = Image.new('RGBA', (lg.width + 2 * P, lg.height + 2 * P), WHITE + (0,)); st.putalpha(Image.fromarray((ring * 255).astype(np.uint8)))
+    sh = Image.new('RGBA', st.size, INK + (0,)); sh.putalpha(st.getchannel('A').point(lambda v: v * 110 // 255).filter(ImageFilter.GaussianBlur(r * .8)))
+    x, y = int(cx - st.width / 2), int(cy - st.height / 2)
+    im.alpha_composite(sh, (x + r // 2, y + r)); im.alpha_composite(st, (x, y)); im.alpha_composite(lg, (x + P, y + P))
 def logo(im, cx, cy, h):
     lg = V1.logo_outlined(int(h), ring=WHITE, r=max(5, int(h / 26))); im.alpha_composite(lg, (int(cx - lg.width / 2), int(cy - lg.height / 2)))
 
@@ -120,11 +134,10 @@ def redonda(k):
     S = SAB[k]; D = int(2.5 * DPI * SS); c = D / 2
     im = gradient(D, D, S['bg1'], S['bg2'])
     (bubbles if S['kind'] == 'agua' else lambda a, b, s: confetti(a, b, s, [S['acc'], WHITE]))(im, 26, 3)
-    scatter(im, S['kind'], S['gum'], 9, (D * .05, D * .05, D * .95, D * .95), D * .1, D * .15, 7, avoid=[(D * .2, D * .1, D * .8, D * .9)])
-    logo(im, c, D * .33, D * .36)
-    fun_text(im, 'GOMITAS', c, D * .6, D * .1, S['acc'])
-    fun_text(im, S['nombre'], c, D * .72, D * .135, WHITE, maxw=D * .74)
-    pill(im, S['tag'], c, D * .85, D * .038, S['acc'], INK)
+    scatter(im, S['kind'], S['gum'], 6, (D * .04, D * .3, D * .96, D * .8), D * .09, D * .12, 7, avoid=[(D * .13, D * .0, D * .87, D * .95)])
+    logo_g(im, c, D * .355, D * .6)
+    fun_text(im, S['nombre'], c, D * .745, D * .125, WHITE, maxw=D * .74)
+    pill(im, S['tag'], c, D * .865, D * .036, S['acc'], INK)
     d = ImageDraw.Draw(im); d.ellipse([D * .02, D * .02, D * .98, D * .98], outline=WHITE, width=int(D * .012))
     m = Image.new('L', (D, D)); ImageDraw.Draw(m).ellipse([0, 0, D - 1, D - 1], fill=255); im.putalpha(m)
     return im.resize((D // SS, D // SS), Image.LANCZOS)
@@ -132,12 +145,11 @@ def rect(k):
     S = SAB[k]; W, H = int(3.5 * DPI * SS), int(2 * DPI * SS)
     im = gradient(W, H, S['bg1'], S['bg2'])
     (bubbles if S['kind'] == 'agua' else lambda a, b, s: confetti(a, b, s, [S['acc'], WHITE]))(im, 30, 5)
-    scatter(im, S['kind'], S['gum'], 6, (W * .8, H * .12, W * .95, H * .88), H * .17, H * .22, 11)
-    logo(im, W * .165, H * .5, H * .37)
-    fun_text(im, 'GOMITAS', W * .555, H * .24, H * .13, S['acc'])
-    fun_text(im, S['nombre'], W * .555, H * .45, H * .19, WHITE, maxw=W * .36)
-    pill(im, S['tag'], W * .555, H * .67, H * .055, S['acc'], INK)
-    ImageDraw.Draw(im).text((W * .555, H * .85), 'El Chiquilín · ' + TEL, font=F(FREDS, H * .06), fill=WHITE, anchor='mm', stroke_width=int(H * .008), stroke_fill=INK)
+    scatter(im, S['kind'], S['gum'], 5, (W * .84, H * .14, W * .95, H * .86), H * .15, H * .19, 11)
+    logo_g(im, W * .235, H * .5, H * .74)
+    fun_text(im, S['nombre'], W * .645, H * .34, H * .17, WHITE, maxw=W * .34)
+    pill(im, S['tag'], W * .645, H * .56, H * .05, S['acc'], INK)
+    ImageDraw.Draw(im).text((W * .645, H * .76), 'El Chiquilín · ' + TEL, font=F(FREDS, H * .06), fill=WHITE, anchor='mm', stroke_width=int(H * .008), stroke_fill=INK)
     d = ImageDraw.Draw(im); d.rounded_rectangle([12, 12, W - 13, H - 13], int(H * .07), outline=WHITE, width=int(H * .016))
     m = Image.new('L', (W, H)); ImageDraw.Draw(m).rounded_rectangle([0, 0, W - 1, H - 1], int(H * .08), fill=255); im.putalpha(m)
     return im.resize((W // SS, H // SS), Image.LANCZOS)
