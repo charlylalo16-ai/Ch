@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZENTRIX SYSTEMS</title>
+<style>
+  html,body{margin:0;background:#07080B;color:#EAF2FF;font-family:system-ui,sans-serif}
+  /* 1) Pantalla de bienvenida que cubre todo y se quita al terminar */
+  #splash{position:fixed;inset:0;z-index:9999;transition:opacity .6s}
+  #splash.fuera{opacity:0;pointer-events:none}
+  #saltar{position:fixed;right:16px;bottom:16px;z-index:10000;background:rgba(255,255,255,.08);color:#EAF2FF;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 16px;font:inherit;cursor:pointer}
+  #sonido{position:fixed;left:16px;bottom:16px;z-index:10000;background:rgba(255,255,255,.08);color:#EAF2FF;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 16px;font:inherit;cursor:pointer}
+  main{padding:40px 16px;max-width:900px;margin:auto}
+  /* 2) Como encabezado dentro de la página, se queda en el logo final */
+  .hero{width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden}
+</style></head>
+<body>
+<div id="splash"></div>
+<button id="saltar">Saltar</button>
+<button id="sonido">🔊 Con sonido</button>
+
+<main>
+  <h1>Tu sitio aquí</h1>
+  <p>Ejemplo 2: la misma animación dentro de la página (se queda en el logo):</p>
+  <div class="hero" id="hero"></div>
+</main>
+
+<script src="zentrix-intro.js"></script>
+<script>
+  const splash = document.getElementById('splash');
+  function quitar() { splash.classList.add('fuera'); document.getElementById('saltar').remove(); document.getElementById('sonido').remove(); setTimeout(() => { intro.destroy(); splash.remove(); }, 700); }
+  // 1) intro de bienvenida a pantalla completa
+  let intro = ZentrixIntro.mount(splash, { onEnd: quitar });
+  document.getElementById('saltar').onclick = quitar;
+  // el navegador no deja reproducir sonido solo: se activa con un clic
+  document.getElementById('sonido').onclick = (e) => {
+    e.target.remove(); intro.destroy();
+    intro = ZentrixIntro.mount(splash, { sound: 'zentrix-intro.mp3', onEnd: quitar });
+  };
+  // 2) en la página, se queda en el logo final
+  ZentrixIntro.mount(document.getElementById('hero'), { hold: true });
+</script>
+</body></html>

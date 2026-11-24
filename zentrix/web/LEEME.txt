@@ -1,0 +1,48 @@
+ZENTRIX SYSTEMS · Animación de intro para web y app
+====================================================
+
+Archivos:
+  zentrix-intro.js   La animación completa (logo vectorial incluido). No necesita librerías.
+  zentrix-intro.mp3  El sonido (opcional).
+  index.html         Ejemplo: pantalla de bienvenida + versión dentro de la página.
+
+---------------------------------------------------------------
+1) EN EL SITIO WEB
+---------------------------------------------------------------
+Sube zentrix-intro.js (y el mp3 si lo usas) a tu hosting y pega esto:
+
+  <div id="intro" style="position:fixed;inset:0;z-index:9999"></div>
+  <script src="zentrix-intro.js"></script>
+  <script>
+    ZentrixIntro.mount(document.getElementById('intro'), {
+      onEnd: () => document.getElementById('intro').remove()   // al terminar, se quita
+    });
+  </script>
+
+Opciones de mount(contenedor, { ... }):
+  background: '#07080B'      color de fondo, o 'transparent'
+  hold: true                 se queda en el logo final (para encabezados)
+  loop: true                 se repite sin parar
+  speed: 1.5                 más rápido (0.8 = más lento)
+  autoplay: false            no arranca solo (usa .play())
+  sound: 'zentrix-intro.mp3' con sonido (el navegador solo lo permite después de un clic/toque)
+  onEnd: () => { ... }       qué hacer al terminar
+
+mount() regresa un control:  .play()  .pause()  .restart()  .seek(segundos)  .destroy()
+
+- Se adapta solo al tamaño del contenedor (PC horizontal, celular vertical).
+- Si el usuario tiene activado "reducir movimiento", muestra directo el logo final.
+- Funciona con React/Vue/Angular: llama mount() sobre un div cuando ya existe
+  (React: dentro de useEffect, y en la limpieza llama .destroy()).
+
+---------------------------------------------------------------
+2) EN LA APP
+---------------------------------------------------------------
+Opción A · WebView: mete index.html + zentrix-intro.js + mp3 en los assets de la app
+          y ábrelo en un WebView como pantalla de bienvenida
+          (Flutter: webview_flutter · React Native: react-native-webview).
+Opción B · Video: usa el MP4 de la intro (zentrix_systems_intro_vertical.mp4)
+          con el reproductor de video nativo. Es lo más ligero y seguro en Android/iOS.
+
+---------------------------------------------------------------
+Duración: 12 s (11.2 s si hold:true).  Peso: ~28 KB el JS, ~240 KB el mp3.
