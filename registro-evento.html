@@ -206,6 +206,10 @@
     .phonegrid{grid-template-columns:1fr;grid-template-rows:auto 1fr}
     .phoneleft{gap:12px}
   }
+  @media (max-width:560px){ .actions{gap:8px} .btn{padding:16px 12px;font-size:17px;gap:6px} .btn.go{flex:1.4} .x{padding:10px 12px;font-size:14px} .mini{width:42px;height:42px} }
+  .joinbox{display:none;margin:12px 20px 0;padding:14px 18px;border-radius:14px;background:#fff;border:2px dashed #9fb4ee;font-size:17px}
+  .joinbox.show{display:block}
+  .joinbox b{font-size:22px;color:var(--b1);font-variant-numeric:tabular-nums;margin-right:14px;white-space:nowrap}
   @media (max-height:560px){ .mini{display:none} .q{margin-bottom:8px} .btn{padding:14px 18px} }
 </style>
 </head>
@@ -309,6 +313,7 @@
     <button class="ab g" id="btnClose" type="button">← Volver al registro</button>
     <button class="ab r" id="btnWipe" type="button">🗑 Borrar todo</button>
   </div>
+  <div class="joinbox" id="join">📲 <span>Para sumar otro dispositivo (conectado al mismo WiFi), abre en su Chrome:</span><br><span id="joinUrls"></span></div>
   <div class="a-q"><input id="aq" type="search" placeholder="🔍 Buscar por nombre o teléfono"></div>
   <div class="tw">
     <table><thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>Hora</th><th></th></tr></thead><tbody id="tbody"></tbody></table>
@@ -418,7 +423,8 @@ function armIdle(){clearTimeout(idleT);idleT=setTimeout(function(){resetFlow();s
 ['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function(){if(current==='s-name'||current==='s-phone')armIdle();},true);});
 
 function resetFlow(){clearPad();$('nameInput').value='';phone='';drawDisplay();$('nameErr').textContent='';$('phoneErr').textContent='';
-  $('s-name').classList.remove('kb');kbMode=false;$('toggleKb').innerHTML='⌨️ Teclado';}
+  $('s-name').classList.remove('kb');kbMode=false;$('toggleKb').innerHTML='⌨️ Teclado';
+  $('nameHint').textContent='Con el lápiz, en cualquier parte del recuadro blanco ✍️';}
 $('start').addEventListener('click',function(){
   resetFlow();show('s-name');
   try{var el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)el.requestFullscreen().catch(function(){});}catch(e){}
@@ -588,7 +594,7 @@ var imgCache={};
 $('openAdmin').addEventListener('click',function(){
   ask({title:'Panel de control',text:'Escribe el PIN',input:'pin',yes:'Entrar'}).then(function(v){
     if(v===null)return;if(v.trim()!==PIN){ask({title:'PIN incorrecto',text:'Intenta de nuevo.',yes:'OK',no:'Cerrar'});return;}
-    (SYNC?Promise.resolve({}):allImgs()).then(function(m){imgCache=m;$('aq').value='';render();$('admin').classList.add('show');if(SYNC)tick();});
+    (SYNC?Promise.resolve({}):allImgs()).then(function(m){imgCache=m;$('aq').value='';render();$('admin').classList.add('show');if(SYNC){tick();api('GET','api/info').then(function(i){if(i.urls&&i.urls.length){$('joinUrls').innerHTML=i.urls.map(function(u){return '<b>'+esc(u)+'</b>';}).join('');$('join').classList.add('show');}}).catch(function(){});}});
   });
 });
 $('btnClose').addEventListener('click',function(){$('admin').classList.remove('show');});

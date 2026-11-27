@@ -84,6 +84,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self.json({"changed": False, "version": state["version"]})
                 return self.json({"changed": True, "version": state["version"],
                                   "registros": [publico(r) for r in state["registros"]]})
+        if u.path == "/api/info":
+            return self.json({"urls": [f"http://{ip}:{PORT}" for ip in ips_locales()]})
         m = re.fullmatch(r"/api/img/(\d+)\.png", u.path)
         if m:
             p = os.path.join(IMG, m.group(1) + ".png")
