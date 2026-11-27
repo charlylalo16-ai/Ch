@@ -34,6 +34,7 @@ type Registro struct {
 	Firma    bool   `json:"firma"`
 	UID      string `json:"uid,omitempty"`
 	Disp     string `json:"disp,omitempty"`
+	Rep      string `json:"representante,omitempty"`
 }
 
 // Dispositivo que se conecta para registrar (tableta, celular, computadora).
@@ -96,7 +97,7 @@ func guardar() {
 	}
 	// Respaldo extra: CSV que se abre directo en Excel
 	var sb strings.Builder
-	sb.WriteString("\ufeffFolio,Nombre,Nombre escrito a mano,Telefono,Fecha y hora,Registrado en\r\n")
+	sb.WriteString("\ufeffFolio,Nombre,Nombre escrito a mano,Telefono,Representante de casilla,Fecha y hora,Registrado en\r\n")
 	for _, r := range registros {
 		escrito := ""
 		if r.Firma {
@@ -113,7 +114,7 @@ func guardar() {
 		if r.Telefono == "" {
 			tel = "(omitido)"
 		}
-		fmt.Fprintf(&sb, "%d,%s,%s,%s,%s,%s\r\n", r.Folio, csvCampo(nombre), escrito, tel, fecha, csvCampo(nombreDisp(r.Disp)))
+		fmt.Fprintf(&sb, "%d,%s,%s,%s,%s,%s,%s\r\n", r.Folio, csvCampo(nombre), escrito, tel, csvCampo(r.Rep), fecha, csvCampo(nombreDisp(r.Disp)))
 	}
 	tmpc := filepath.Join(dirDatos, "registros.csv.tmp")
 	if os.WriteFile(tmpc, []byte(sb.String()), 0o644) == nil {
@@ -211,7 +212,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			}
 			pub := make([]map[string]any, 0, len(registros))
 			for _, x := range registros {
-				pub = append(pub, map[string]any{"folio": x.Folio, "nombre": x.Nombre, "telefono": x.Telefono, "fecha": x.Fecha, "firma": x.Firma, "dispNombre": nombreDisp(x.Disp)})
+				pub = append(pub, map[string]any{"folio": x.Folio, "nombre": x.Nombre, "telefono": x.Telefono, "fecha": x.Fecha, "firma": x.Firma, "representante": x.Rep, "dispNombre": nombreDisp(x.Disp)})
 			}
 			responderJSON(w, 200, map[string]any{"changed": true, "version": version, "registros": pub})
 		case p == "/api/dispositivos":
@@ -277,6 +278,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		fecha := corta(str("fecha"), 40)
 		img := str("img")
 		disp := corta(str("disp"), 40)
+		repAns := corta(str("representante"), 5)
 		mu.Lock()
 		tocar(disp, str("tipo"), r)
 		if f, ok := uids[uid]; uid != "" && ok {
@@ -298,7 +300,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		registros = append(registros, Registro{folio, nombre, tel, fecha, firma, uid, disp})
+		registros = append(registros, Registro{folio, nombre, tel, fecha, firma, uid, disp, repAns})
 		if uid != "" {
 			uids[uid] = folio
 		}

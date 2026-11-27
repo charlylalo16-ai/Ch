@@ -226,7 +226,15 @@
   .skip{align-self:flex-end;margin-top:10px;padding:9px 14px;border-radius:12px;font-size:15px;font-weight:700;
         background:transparent;border:1px solid var(--glassb);opacity:.8}
   .phoneleft .skip{align-self:flex-start;margin-top:0}
-  #s-phone,#s-done{overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #s-phone,#s-done,#s-rep{overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .repwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(18px,4vh,40px);text-align:center;padding:10px 0}
+  .repq{font-size:clamp(30px,5.2vw,60px);font-weight:900;line-height:1.08;max-width:900px}
+  .repq em{font-style:normal;color:var(--aqua)}
+  .repbtns{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,3vw,28px);width:min(820px,100%)}
+  .rep{padding:clamp(26px,6vh,56px) 10px;border-radius:28px;font-size:clamp(32px,5.5vw,60px);font-weight:900;transition:transform .08s}
+  .rep:active{transform:scale(.96)}
+  .rep.si{color:var(--n2);background:linear-gradient(90deg,var(--aqua),#c3fff8);box-shadow:0 18px 40px rgba(94,230,216,.35)}
+  .rep.no{background:rgba(255,255,255,.12);border:2px solid var(--glassb)}
   @media (orientation:portrait) and (max-height:900px){
     #s-phone .mini{display:none} #s-phone .topbar{margin-bottom:8px}
     #s-phone .phonegrid{gap:10px} #s-phone .phoneleft{gap:8px}
@@ -264,7 +272,7 @@
 <section class="screen" id="s-name">
   <div class="topbar">
     <img class="mini" data-flyer alt="">
-    <div class="steps"><div class="lbl">Paso 1 de 2 · Nombre</div><div class="bar"><i style="width:50%"></i></div></div>
+    <div class="steps"><div class="lbl">Paso 1 de 3 · Nombre</div><div class="bar"><i style="width:33%"></i></div></div>
     <button class="x" data-cancel type="button">✕ Cancelar</button>
   </div>
   <div class="q">Escribe tu nombre completo
@@ -290,7 +298,7 @@
 <section class="screen" id="s-phone">
   <div class="topbar">
     <img class="mini" data-flyer alt="">
-    <div class="steps"><div class="lbl">Paso 2 de 2 · Teléfono</div><div class="bar"><i style="width:100%"></i></div></div>
+    <div class="steps"><div class="lbl">Paso 2 de 3 · Teléfono</div><div class="bar"><i style="width:66%"></i></div></div>
     <button class="x" data-cancel type="button">✕ Cancelar</button>
   </div>
   <div class="phonegrid">
@@ -301,7 +309,7 @@
       <div class="err" id="phoneErr"></div>
       <div class="actions" style="margin-top:0">
         <button class="btn ghost" id="back" type="button">← Atrás</button>
-        <button class="btn go" id="submit" type="button" disabled>Registrarme ✅</button>
+        <button class="btn go" id="submit" type="button" disabled>Siguiente →</button>
       </div>
       <button class="skip" id="skipPhone" type="button">⏭ Omitir teléfono</button>
     </div>
@@ -309,7 +317,24 @@
   </div>
 </section>
 
-<!-- 4. Gracias -->
+<!-- 4. Pregunta final -->
+<section class="screen" id="s-rep">
+  <div class="topbar">
+    <img class="mini" data-flyer alt="">
+    <div class="steps"><div class="lbl">Paso 3 de 3 · Última pregunta</div><div class="bar"><i style="width:100%"></i></div></div>
+    <button class="x" data-cancel type="button">✕ Cancelar</button>
+  </div>
+  <div class="repwrap">
+    <div class="repq">¿Te gustaría ser <em>representante de casilla</em>?</div>
+    <div class="repbtns">
+      <button class="rep si" data-rep="Sí" type="button">👍 Sí</button>
+      <button class="rep no" data-rep="No" type="button">No</button>
+    </div>
+    <button class="btn ghost" id="backRep" type="button">← Atrás</button>
+  </div>
+</section>
+
+<!-- 5. Gracias -->
 <section class="screen" id="s-done">
   <div class="ring">✓</div>
   <h2 id="doneTitle">¡Gracias!</h2>
@@ -348,7 +373,7 @@
   </div>
   <div class="a-q"><input id="aq" type="search" placeholder="🔍 Buscar por nombre o teléfono"></div>
   <div class="tw">
-    <table><thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>Hora</th><th></th></tr></thead><tbody id="tbody"></tbody></table>
+    <table><thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>Rep. casilla</th><th>Hora</th><th></th></tr></thead><tbody id="tbody"></tbody></table>
     <div class="empty" id="empty">Todavía no hay registros.</div>
   </div>
 </div>
@@ -464,11 +489,11 @@ var current='s-welcome', idleT=null;
 function show(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id===id);});
   current=id; document.body.classList.toggle('home',id==='s-welcome'); $('openAdmin').style.display=id==='s-welcome'?'':'none';
-  clearTimeout(idleT); if(id==='s-name'||id==='s-phone')armIdle();
+  clearTimeout(idleT); if(id==='s-name'||id==='s-phone'||id==='s-rep')armIdle();
   if(id==='s-name')setTimeout(sizePad,60);
 }
 function armIdle(){clearTimeout(idleT);idleT=setTimeout(function(){resetFlow();show('s-welcome');},IDLE_MS);}
-['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function(){if(current==='s-name'||current==='s-phone')armIdle();},true);});
+['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function(){if(current==='s-name'||current==='s-phone'||current==='s-rep')armIdle();},true);});
 
 function resetFlow(){busy=false;clearPad();$('nameInput').value='';phone='';drawDisplay();$('nameErr').textContent='';$('phoneErr').textContent='';
   $('s-name').classList.remove('kb');kbMode=false;$('toggleKb').innerHTML='⌨️ Teclado';
@@ -594,7 +619,7 @@ $('submit').addEventListener('click',function(){
   if(busy||current!=='s-phone')return;
   if(phone.length!==10)return fail('phoneErr','El teléfono debe tener 10 dígitos.');
   var dup=allRecs().filter(function(r){return r.telefono===phone;})[0];
-  var go=function(){if(busy||current!=='s-phone')return;busy=true;finish();};
+  var go=function(){if(busy||current!=='s-phone')return;show('s-rep');};
   if(dup){ask({title:'Este número ya está registrado',text:'¿Quieres registrarte de nuevo con el mismo teléfono?',yes:'Sí, registrar',no:'Cancelar'}).then(function(ok){if(ok)go();});}
   else go();
 });
@@ -608,18 +633,22 @@ $('skipName').addEventListener('click',function(){pedirCodigo().then(function(ok
   pending={nombre:'',img:null,omit:true};$('namePreview').innerHTML='<div class="txt">— Omitido —</div>';
   document.activeElement&&document.activeElement.blur();show('s-phone');});});
 $('skipPhone').addEventListener('click',function(){pedirCodigo().then(function(ok){
-  if(!ok||busy||current!=='s-phone')return;phone='';drawDisplay();busy=true;finish();});});
+  if(!ok||busy||current!=='s-phone')return;phone='';drawDisplay();show('s-rep');});});
+var repAns='';
+document.querySelectorAll('[data-rep]').forEach(function(b){b.addEventListener('click',function(){
+  if(busy||current!=='s-rep')return;busy=true;repAns=b.getAttribute('data-rep');finish();});});
+$('backRep').addEventListener('click',function(){if(current==='s-rep')show('s-phone');});
 function finish(){
   var iso=new Date().toISOString(),folioTxt;
   if(SYNC){
     var uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-    outbox.push({uid:uid,nombre:pending.nombre,telefono:phone,fecha:iso,img:pending.img,disp:DEV,tipo:DEVTIPO});saveOutbox();waitUid=uid;
+    outbox.push({uid:uid,nombre:pending.nombre,telefono:phone,fecha:iso,img:pending.img,disp:DEV,tipo:DEVTIPO,representante:repAns});saveOutbox();waitUid=uid;
     folioTxt='Guardando…';
     setTimeout(function(){if(current==='s-done'&&waitUid===uid&&outbox.some(function(o){return o.uid===uid;}))
       $('doneFolio').textContent='✓ Guardado · se enviará a la laptop';},2000);
   }else{
     var folio=(data.length?Math.max.apply(null,data.map(function(r){return r.folio;})):0)+1;
-    data.push({folio:folio,nombre:pending.nombre,telefono:phone,fecha:iso,firma:!!pending.img});save();
+    data.push({folio:folio,nombre:pending.nombre,telefono:phone,fecha:iso,firma:!!pending.img,representante:repAns});save();
     if(pending.img)putImg(folio,pending.img);
     folioTxt='Registro #'+folio;
   }
@@ -667,7 +696,7 @@ function render(){
   var rows=all.slice().reverse().filter(function(r){return !q||(r.nombre||'').toLowerCase().indexOf(q)!==-1||(qd&&r.telefono.indexOf(qd)!==-1)||String(r.folio)===q;});
   $('tbody').innerHTML=rows.map(function(r){
     var src=imgSrc(r),nm=src?'<img alt="" src="'+esc(src)+'">':(r.nombre?esc(r.nombre):'<i style="color:#8a94b5">— omitido —</i>');
-    return '<tr><td class="n">'+(r.folio||'⏳')+'</td><td>'+nm+'</td><td>'+(r.telefono?fmtTel(r.telefono):'<i style="color:#8a94b5">— omitido —</i>')+'</td><td>'+hora(r.fecha)+
+    return '<tr><td class="n">'+(r.folio||'⏳')+'</td><td>'+nm+'</td><td>'+(r.telefono?fmtTel(r.telefono):'<i style="color:#8a94b5">— omitido —</i>')+'</td><td>'+esc(r.representante||'—')+'</td><td>'+hora(r.fecha)+
            '</td><td class="del">'+(r.folio?'<button type="button" data-f="'+r.folio+'" aria-label="Borrar">✕</button>':'')+'</td></tr>';}).join('');
   $('empty').style.display=rows.length?'none':'block';$('empty').textContent=all.length?'Sin resultados.':'Todavía no hay registros.';
   refreshCount();
@@ -694,7 +723,7 @@ $('btnExcel').addEventListener('click',function(){
     if(!outbox.length){ask({title:'Sin conexión',text:'Descarga el Excel desde la laptop, o espera a que vuelva la conexión.',yes:'OK',no:'Cerrar'});return;}
     ask({title:'Sin conexión con la laptop',text:'Esta tableta tiene '+outbox.length+' registro(s) pendientes de enviar.\n¿Descargarlos en un Excel aparte como respaldo?',yes:'Descargar',no:'Cancelar'}).then(function(ok){
       if(!ok)return;var imgs={},recs=outbox.map(function(o,i){var f='P'+(i+1);if(o.img)imgs[f]=o.img;
-        return {folio:f,nombre:o.nombre,telefono:o.telefono,fecha:o.fecha,firma:!!o.img,dispNombre:'Pendiente (sin enviar)'};});
+        return {folio:f,nombre:o.nombre,telefono:o.telefono,fecha:o.fecha,firma:!!o.img,representante:o.representante,dispNombre:'Pendiente (sin enviar)'};});
       var n=new Date();descargar(buildXlsx(recs,imgs),'Pendientes_Tableta_'+pad2(n.getHours())+pad2(n.getMinutes())+'.xlsx');});
     return;
   }
@@ -710,13 +739,13 @@ function b64bytes(u){var s=atob(u.split(',')[1]),b=new Uint8Array(s.length);for(
 function buildXlsx(recs,imgs){
   var H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',NS='http://schemas.openxmlformats.org/';
   var R=NS+'officeDocument/2006/relationships';
-  var head=['#','Nombre (texto)','Nombre escrito a mano','Teléfono','Fecha','Hora','Registrado en'];
+  var head=['#','Nombre (texto)','Nombre escrito a mano','Teléfono','Representante de casilla','Fecha','Hora','Registrado en'];
   var media=[];
   var sh=H+'<worksheet xmlns="'+NS+'spreadsheetml/2006/main" xmlns:r="'+R+'">'+
     '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
     '<sheetFormatPr defaultRowHeight="15"/>'+
     '<cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="3" width="40" customWidth="1"/>'+
-    '<col min="4" max="4" width="15" customWidth="1"/><col min="5" max="5" width="12" customWidth="1"/><col min="6" max="6" width="9" customWidth="1"/><col min="7" max="7" width="22" customWidth="1"/></cols><sheetData>';
+    '<col min="4" max="4" width="15" customWidth="1"/><col min="5" max="5" width="14" customWidth="1"/><col min="6" max="6" width="12" customWidth="1"/><col min="7" max="7" width="9" customWidth="1"/><col min="8" max="8" width="22" customWidth="1"/></cols><sheetData>';
   function cell(ref,v,s){if(typeof v==='number')return '<c r="'+ref+'" s="'+s+'"><v>'+v+'</v></c>';
     return '<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+xe(v)+'</t></is></c>';}
   sh+='<row r="1" ht="24" customHeight="1">'+head.map(function(h,i){return cell(String.fromCharCode(65+i)+'1',h,1);}).join('')+'</row>';
@@ -725,7 +754,7 @@ function buildXlsx(recs,imgs){
     if(im){var bytes=typeof im==='string'?b64bytes(im):im,w=(bytes[16]<<24|bytes[17]<<16|bytes[18]<<8|bytes[19])>>>0,h=(bytes[20]<<24|bytes[21]<<16|bytes[22]<<8|bytes[23])>>>0;
       var sc=Math.min(270/w,46/h,1);media.push({bytes:bytes,row:row-1,w:Math.round(w*sc),h:Math.round(h*sc)});}
     sh+='<row r="'+row+'"'+(im?' ht="40" customHeight="1"':'')+'>'+
-      [r.folio,r.nombre||(r.firma?'':'(omitido)'),' ',r.telefono||'(omitido)',fecha(r.fecha),hora(r.fecha),r.dispNombre||(SYNC?'':'Esta tableta')].map(function(v,ci){return cell(String.fromCharCode(65+ci)+row,v,2);}).join('')+'</row>';
+      [r.folio,r.nombre||(r.firma?'':'(omitido)'),' ',r.telefono||'(omitido)',r.representante||'',fecha(r.fecha),hora(r.fecha),r.dispNombre||(SYNC?'':'Esta tableta')].map(function(v,ci){return cell(String.fromCharCode(65+ci)+row,v,2);}).join('')+'</row>';
   });
   sh+='</sheetData>'+(media.length?'<drawing r:id="rId1"/>':'')+'</worksheet>';
 
