@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -32,12 +33,22 @@ type Registro struct {
 	Fecha    string `json:"fecha"`
 	Firma    bool   `json:"firma"`
 	UID      string `json:"uid,omitempty"`
+	Disp     string `json:"disp,omitempty"`
+}
+
+// Dispositivo que se conecta para registrar (tableta, celular, computadora).
+type Dispositivo struct {
+	ID     string    `json:"id"`
+	Nombre string    `json:"nombre"`
+	Ultima time.Time `json:"-"`
 }
 
 var (
 	mu        sync.Mutex
 	registros []Registro
 	uids      = map[string]int{}
+	disps     = map[string]*Dispositivo{}
+	cuenta    = map[string]int{}
 	version   = time.Now().Unix()
 	dirDatos  string
 	dirImg    string
@@ -53,10 +64,18 @@ func cargar() {
 		return
 	}
 	var d struct {
-		Registros []Registro `json:"registros"`
+		Registros    []Registro     `json:"registros"`
+		Dispositivos []*Dispositivo `json:"dispositivos"`
+		Cuenta       map[string]int `json:"cuenta"`
 	}
 	if json.Unmarshal(b, &d) == nil {
 		registros = d.Registros
+		for _, x := range d.Dispositivos {
+			disps[x.ID] = x
+		}
+		if d.Cuenta != nil {
+			cuenta = d.Cuenta
+		}
 	}
 	for _, r := range registros {
 		if r.UID != "" {
@@ -66,14 +85,18 @@ func cargar() {
 }
 
 func guardar() {
-	b, _ := json.MarshalIndent(map[string]any{"registros": registros}, "", " ")
+	lista := make([]*Dispositivo, 0, len(disps))
+	for _, x := range disps {
+		lista = append(lista, x)
+	}
+	b, _ := json.MarshalIndent(map[string]any{"registros": registros, "dispositivos": lista, "cuenta": cuenta}, "", " ")
 	tmp := archivoDB + ".tmp"
 	if os.WriteFile(tmp, b, 0o644) == nil {
 		os.Rename(tmp, archivoDB) // en Windows reemplaza el archivo existente
 	}
 	// Respaldo extra: CSV que se abre directo en Excel
 	var sb strings.Builder
-	sb.WriteString("\ufeffFolio,Nombre,Nombre escrito a mano,Telefono,Fecha y hora\r\n")
+	sb.WriteString("\ufeffFolio,Nombre,Nombre escrito a mano,Telefono,Fecha y hora,Registrado en\r\n")
 	for _, r := range registros {
 		escrito := ""
 		if r.Firma {
@@ -83,7 +106,14 @@ func guardar() {
 		if t, err := time.Parse(time.RFC3339Nano, r.Fecha); err == nil {
 			fecha = t.Local().Format("02/01/2006 15:04")
 		}
-		fmt.Fprintf(&sb, "%d,%s,%s,%s,%s\r\n", r.Folio, csvCampo(r.Nombre), escrito, csvCampo("=\""+r.Telefono+"\""), fecha)
+		nombre, tel := r.Nombre, csvCampo("=\""+r.Telefono+"\"")
+		if nombre == "" && !r.Firma {
+			nombre = "(omitido)"
+		}
+		if r.Telefono == "" {
+			tel = "(omitido)"
+		}
+		fmt.Fprintf(&sb, "%d,%s,%s,%s,%s,%s\r\n", r.Folio, csvCampo(nombre), escrito, tel, fecha, csvCampo(nombreDisp(r.Disp)))
 	}
 	tmpc := filepath.Join(dirDatos, "registros.csv.tmp")
 	if os.WriteFile(tmpc, []byte(sb.String()), 0o644) == nil {
@@ -91,6 +121,38 @@ func guardar() {
 			os.Remove(tmpc) // si Excel tiene el CSV abierto, se actualiza la proxima vez
 		}
 	}
+}
+
+func nombreDisp(id string) string {
+	if d, ok := disps[id]; ok {
+		return d.Nombre
+	}
+	return ""
+}
+
+// tocar registra que un dispositivo esta conectado. Se llama con mu tomado.
+func tocar(id, tipo string, r *http.Request) {
+	id = corta(id, 40)
+	if id == "" {
+		return
+	}
+	d, ok := disps[id]
+	if !ok {
+		host, _, _ := net.SplitHostPort(r.RemoteAddr)
+		if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+			d = &Dispositivo{ID: id, Nombre: "Esta computadora"}
+		} else {
+			if tipo != "Tableta" && tipo != "Celular" && tipo != "Computadora" {
+				tipo = "Dispositivo"
+			}
+			cuenta[tipo]++
+			d = &Dispositivo{ID: id, Nombre: fmt.Sprintf("%s %d", tipo, cuenta[tipo])}
+		}
+		disps[id] = d
+		guardar()
+		fmt.Printf("  [NUEVO DISPOSITIVO] %s\n", d.Nombre)
+	}
+	d.Ultima = time.Now()
 }
 
 func csvCampo(s string) string {
@@ -142,15 +204,38 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		case p == "/api/registros":
 			mu.Lock()
 			defer mu.Unlock()
+			tocar(r.URL.Query().Get("d"), r.URL.Query().Get("t"), r)
 			if r.URL.Query().Get("v") == strconv.FormatInt(version, 10) {
 				responderJSON(w, 200, map[string]any{"changed": false, "version": version})
 				return
 			}
 			pub := make([]map[string]any, 0, len(registros))
 			for _, x := range registros {
-				pub = append(pub, map[string]any{"folio": x.Folio, "nombre": x.Nombre, "telefono": x.Telefono, "fecha": x.Fecha, "firma": x.Firma})
+				pub = append(pub, map[string]any{"folio": x.Folio, "nombre": x.Nombre, "telefono": x.Telefono, "fecha": x.Fecha, "firma": x.Firma, "dispNombre": nombreDisp(x.Disp)})
 			}
 			responderJSON(w, 200, map[string]any{"changed": true, "version": version, "registros": pub})
+		case p == "/api/dispositivos":
+			mu.Lock()
+			defer mu.Unlock()
+			porDisp := map[string]int{}
+			for _, x := range registros {
+				porDisp[x.Disp]++
+			}
+			lista := []map[string]any{}
+			conectados := 0
+			for _, d := range disps {
+				if d.Ultima.IsZero() {
+					continue // visto antes de reiniciar el programa y no ha vuelto
+				}
+				hace := int(time.Since(d.Ultima).Seconds())
+				on := hace < 10
+				if on {
+					conectados++
+				}
+				lista = append(lista, map[string]any{"nombre": d.Nombre, "conectado": on, "hace": hace, "registros": porDisp[d.ID]})
+			}
+			sort.Slice(lista, func(i, j int) bool { return lista[i]["nombre"].(string) < lista[j]["nombre"].(string) })
+			responderJSON(w, 200, map[string]any{"conectados": conectados, "dispositivos": lista})
 		case p == "/api/info":
 			urls := []string{}
 			for _, ip := range ipsLocales() {
@@ -191,7 +276,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		tel := corta(soloNum.ReplaceAllString(str("telefono"), ""), 15)
 		fecha := corta(str("fecha"), 40)
 		img := str("img")
+		disp := corta(str("disp"), 40)
 		mu.Lock()
+		tocar(disp, str("tipo"), r)
 		if f, ok := uids[uid]; uid != "" && ok {
 			mu.Unlock()
 			responderJSON(w, 200, map[string]int{"folio": f})
@@ -211,7 +298,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		registros = append(registros, Registro{folio, nombre, tel, fecha, firma, uid})
+		registros = append(registros, Registro{folio, nombre, tel, fecha, firma, uid, disp})
 		if uid != "" {
 			uids[uid] = folio
 		}
@@ -220,8 +307,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		total := len(registros)
 		mu.Unlock()
 		n := nombre
-		if n == "" {
+		if n == "" && firma {
 			n = "(escrito a mano)"
+		} else if n == "" {
+			n = "(omitido)"
 		}
 		fmt.Printf("  [OK] #%-4d %-35s %s   total: %d\n", folio, n, tel, total)
 		responderJSON(w, 200, map[string]int{"folio": folio})

@@ -207,9 +207,18 @@
     .phoneleft{gap:12px}
   }
   @media (max-width:560px){ .actions{gap:8px} .btn{padding:16px 12px;font-size:17px;gap:6px} .btn.go{flex:1.4} .x{padding:10px 12px;font-size:14px} .mini{width:42px;height:42px} }
-  .joinbox{display:none;margin:12px 20px 0;padding:14px 18px;border-radius:14px;background:#fff;border:2px dashed #9fb4ee;font-size:17px}
-  .joinbox.show{display:block}
-  .joinbox b{font-size:22px;color:var(--b1);font-variant-numeric:tabular-nums;margin-right:14px;white-space:nowrap}
+  .devbox{display:none;margin:12px 20px 0;padding:14px 18px;border-radius:14px;background:#fff;border:1px solid #d8e0f5}
+  .devbox.show{display:block}
+  .devhead{font-size:18px;font-weight:800;margin-bottom:10px}
+  .devhead b{font-size:26px;color:var(--verde);margin-right:4px}
+  .devlist{display:flex;flex-wrap:wrap;gap:8px}
+  .dev{padding:8px 12px;border-radius:12px;font-size:15px;font-weight:700;background:#e9f8f1;border:1px solid #b9e8d3}
+  .dev.off{background:#f1f3f8;border-color:#dde3f0;color:#6b7799}
+  .join{margin-top:12px;font-size:15px;color:#33416b}
+  .join b{font-size:19px;color:var(--b1);font-variant-numeric:tabular-nums;margin-right:12px;white-space:nowrap}
+  .skip{align-self:flex-end;margin-top:10px;padding:9px 14px;border-radius:12px;font-size:15px;font-weight:700;
+        background:transparent;border:1px solid var(--glassb);opacity:.8}
+  .phoneleft .skip{align-self:flex-start;margin-top:0}
   @media (max-height:560px){ .mini{display:none} .q{margin-bottom:8px} .btn{padding:14px 18px} }
 </style>
 </head>
@@ -257,6 +266,7 @@
     <button class="btn ghost" id="toggleKb" type="button">⌨️ Teclado</button>
     <button class="btn go" id="toPhone" type="button">Siguiente →</button>
   </div>
+  <button class="skip" id="skipName" type="button">⏭ Omitir este paso</button>
 </section>
 
 <!-- 3. Teléfono -->
@@ -276,6 +286,7 @@
         <button class="btn ghost" id="back" type="button">← Atrás</button>
         <button class="btn go" id="submit" type="button" disabled>Registrarme ✅</button>
       </div>
+      <button class="skip" id="skipPhone" type="button">⏭ Omitir teléfono</button>
     </div>
     <div class="keypad" id="keypad"></div>
   </div>
@@ -313,7 +324,11 @@
     <button class="ab g" id="btnClose" type="button">← Volver al registro</button>
     <button class="ab r" id="btnWipe" type="button">🗑 Borrar todo</button>
   </div>
-  <div class="joinbox" id="join">📲 <span>Para sumar otro dispositivo (conectado al mismo WiFi), abre en su Chrome:</span><br><span id="joinUrls"></span></div>
+  <div class="devbox" id="devbox">
+    <div class="devhead"><b id="devCount">0</b> dispositivos conectados</div>
+    <div class="devlist" id="devList"></div>
+    <div class="join" id="join">📲 Para sumar otro dispositivo (mismo WiFi), abre en su Chrome: <span id="joinUrls"></span></div>
+  </div>
   <div class="a-q"><input id="aq" type="search" placeholder="🔍 Buscar por nombre o teléfono"></div>
   <div class="tw">
     <table><thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>Hora</th><th></th></tr></thead><tbody id="tbody"></tbody></table>
@@ -324,7 +339,7 @@
 <script>
 (function(){
 'use strict';
-var KEY='registro_evento_28nov_2026', PIN='2811', IDLE_MS=90000;
+var KEY='registro_evento_28nov_2026', PIN='2811', SKIP_PIN='1357', IDLE_MS=90000;
 function $(id){return document.getElementById(id);}
 function pad2(n){return (n<10?'0':'')+n;}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -392,14 +407,25 @@ function flush(){
     return flush();
   },function(){flushing=false;setOnline(false);});
 }
+var DEV=(function(){var k='registro_dispositivo_id',v;try{v=localStorage.getItem(k);if(!v){v='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem(k,v);}}catch(e){v='d'+Math.random().toString(36).slice(2,10);}return v;})();
+var DEVTIPO=(navigator.maxTouchPoints>0||'ontouchstart' in window)?(Math.min(screen.width,screen.height)<600?'Celular':'Tableta'):'Computadora';
 function poll(){
   if(!SYNC)return Promise.resolve();
-  return api('GET','api/registros?v='+encodeURIComponent(version)).then(function(res){
+  return api('GET','api/registros?v='+encodeURIComponent(version)+'&d='+DEV+'&t='+DEVTIPO).then(function(res){
     setOnline(true);
     if(res.changed){version=String(res.version);data=res.registros||[];refreshCount();if($('admin').classList.contains('show'))render();}
   },function(){setOnline(false);});
 }
-function tick(){flush().then(poll);}
+function tick(){flush().then(poll).then(function(){if($('admin').classList.contains('show'))loadDevs();});}
+function hace(s){return s<60?s+' s':s<3600?Math.round(s/60)+' min':Math.round(s/3600)+' h';}
+function loadDevs(){
+  return api('GET','api/dispositivos').then(function(r){
+    $('devCount').textContent=r.conectados;
+    $('devList').innerHTML=(r.dispositivos||[]).map(function(d){
+      return '<span class="dev'+(d.conectado?'':' off')+'">'+(d.conectado?'🟢 ':'⚪ ')+esc(d.nombre)+' · '+d.registros+' reg.'+
+             (d.conectado?'':' · sin señal hace '+hace(d.hace))+'</span>';}).join('')||'<span class="dev off">Ninguno todavía</span>';
+  }).catch(function(){});
+}
 function allRecs(){return SYNC?data.concat(outbox):data;}
 function imgSrc(r){if(SYNC){if(r.img)return r.img;return r.firma?'api/img/'+r.folio+'.png':null;}return imgCache[r.folio]||null;}
 function serverImgs(){var m={};
@@ -550,11 +576,22 @@ $('submit').addEventListener('click',function(){
   if(dup){ask({title:'Este número ya está registrado',text:'¿Quieres registrarte de nuevo con el mismo teléfono?',yes:'Sí, registrar',no:'Cancelar'}).then(function(ok){if(ok)go();});}
   else go();
 });
+function pedirCodigo(){
+  return ask({title:'Omitir este paso',text:'Solo personal de la mesa.\nEscribe el código para omitir:',input:'pin',yes:'Omitir'}).then(function(v){
+    if(v===null)return false;if(v.trim()===SKIP_PIN)return true;
+    ask({title:'Código incorrecto',text:'Pide ayuda al encargado de la mesa.',yes:'OK',no:'Cerrar'});return false;});
+}
+$('skipName').addEventListener('click',function(){pedirCodigo().then(function(ok){
+  if(!ok||current!=='s-name')return;
+  pending={nombre:'',img:null,omit:true};$('namePreview').innerHTML='<div class="txt">— Omitido —</div>';
+  document.activeElement&&document.activeElement.blur();show('s-phone');});});
+$('skipPhone').addEventListener('click',function(){pedirCodigo().then(function(ok){
+  if(!ok||busy||current!=='s-phone')return;phone='';drawDisplay();busy=true;finish();});});
 function finish(){
   var iso=new Date().toISOString(),folioTxt;
   if(SYNC){
     var uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-    outbox.push({uid:uid,nombre:pending.nombre,telefono:phone,fecha:iso,img:pending.img});saveOutbox();waitUid=uid;
+    outbox.push({uid:uid,nombre:pending.nombre,telefono:phone,fecha:iso,img:pending.img,disp:DEV,tipo:DEVTIPO});saveOutbox();waitUid=uid;
     folioTxt='Guardando…';
     setTimeout(function(){if(current==='s-done'&&waitUid===uid&&outbox.some(function(o){return o.uid===uid;}))
       $('doneFolio').textContent='✓ Guardado · se enviará a la laptop';},2000);
@@ -567,6 +604,7 @@ function finish(){
   refreshCount();
   $('doneTitle').textContent=pending.nombre?'¡Gracias, '+pending.nombre.split(' ')[0]+'!':'¡Gracias!';
   $('doneSig').innerHTML=pending.img?'<img alt="" src="'+pending.img+'">':'<div class="txt">'+esc(pending.nombre)+'</div>';
+  $('doneSig').style.display=(pending.img||pending.nombre)?'':'none';
   $('doneFolio').textContent=folioTxt;
   confetti();show('s-done');
   if(SYNC)flush().then(poll);
@@ -596,7 +634,7 @@ var imgCache={};
 $('openAdmin').addEventListener('click',function(){
   ask({title:'Panel de control',text:'Escribe el PIN',input:'pin',yes:'Entrar'}).then(function(v){
     if(v===null)return;if(v.trim()!==PIN){ask({title:'PIN incorrecto',text:'Intenta de nuevo.',yes:'OK',no:'Cerrar'});return;}
-    (SYNC?Promise.resolve({}):allImgs()).then(function(m){imgCache=m;$('aq').value='';render();$('admin').classList.add('show');if(SYNC){tick();api('GET','api/info').then(function(i){if(i.urls&&i.urls.length){$('joinUrls').innerHTML=i.urls.map(function(u){return '<b>'+esc(u)+'</b>';}).join('');$('join').classList.add('show');}}).catch(function(){});}});
+    (SYNC?Promise.resolve({}):allImgs()).then(function(m){imgCache=m;$('aq').value='';render();$('admin').classList.add('show');if(SYNC){tick();$('devbox').classList.add('show');loadDevs();api('GET','api/info').then(function(i){$('joinUrls').innerHTML=(i.urls||[]).map(function(u){return '<b>'+esc(u)+'</b>';}).join('')||'<b>(sin red)</b>';}).catch(function(){});}});
   });
 });
 $('btnClose').addEventListener('click',function(){$('admin').classList.remove('show');});
@@ -606,8 +644,8 @@ function render(){
   var all=allRecs();
   var rows=all.slice().reverse().filter(function(r){return !q||(r.nombre||'').toLowerCase().indexOf(q)!==-1||(qd&&r.telefono.indexOf(qd)!==-1)||String(r.folio)===q;});
   $('tbody').innerHTML=rows.map(function(r){
-    var src=imgSrc(r),nm=src?'<img alt="" src="'+esc(src)+'">':esc(r.nombre||'—');
-    return '<tr><td class="n">'+(r.folio||'⏳')+'</td><td>'+nm+'</td><td>'+fmtTel(r.telefono)+'</td><td>'+hora(r.fecha)+
+    var src=imgSrc(r),nm=src?'<img alt="" src="'+esc(src)+'">':(r.nombre?esc(r.nombre):'<i style="color:#8a94b5">— omitido —</i>');
+    return '<tr><td class="n">'+(r.folio||'⏳')+'</td><td>'+nm+'</td><td>'+(r.telefono?fmtTel(r.telefono):'<i style="color:#8a94b5">— omitido —</i>')+'</td><td>'+hora(r.fecha)+
            '</td><td class="del">'+(r.folio?'<button type="button" data-f="'+r.folio+'" aria-label="Borrar">✕</button>':'')+'</td></tr>';}).join('');
   $('empty').style.display=rows.length?'none':'block';$('empty').textContent=all.length?'Sin resultados.':'Todavía no hay registros.';
   refreshCount();
@@ -643,13 +681,13 @@ function b64bytes(u){var s=atob(u.split(',')[1]),b=new Uint8Array(s.length);for(
 function buildXlsx(recs,imgs){
   var H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',NS='http://schemas.openxmlformats.org/';
   var R=NS+'officeDocument/2006/relationships';
-  var head=['#','Nombre (texto)','Nombre escrito a mano','Teléfono','Fecha','Hora'];
+  var head=['#','Nombre (texto)','Nombre escrito a mano','Teléfono','Fecha','Hora','Registrado en'];
   var media=[];
   var sh=H+'<worksheet xmlns="'+NS+'spreadsheetml/2006/main" xmlns:r="'+R+'">'+
     '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
     '<sheetFormatPr defaultRowHeight="15"/>'+
     '<cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="3" width="40" customWidth="1"/>'+
-    '<col min="4" max="4" width="15" customWidth="1"/><col min="5" max="5" width="12" customWidth="1"/><col min="6" max="6" width="9" customWidth="1"/></cols><sheetData>';
+    '<col min="4" max="4" width="15" customWidth="1"/><col min="5" max="5" width="12" customWidth="1"/><col min="6" max="6" width="9" customWidth="1"/><col min="7" max="7" width="22" customWidth="1"/></cols><sheetData>';
   function cell(ref,v,s){if(typeof v==='number')return '<c r="'+ref+'" s="'+s+'"><v>'+v+'</v></c>';
     return '<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+xe(v)+'</t></is></c>';}
   sh+='<row r="1" ht="24" customHeight="1">'+head.map(function(h,i){return cell(String.fromCharCode(65+i)+'1',h,1);}).join('')+'</row>';
@@ -658,7 +696,7 @@ function buildXlsx(recs,imgs){
     if(im){var bytes=typeof im==='string'?b64bytes(im):im,w=(bytes[16]<<24|bytes[17]<<16|bytes[18]<<8|bytes[19])>>>0,h=(bytes[20]<<24|bytes[21]<<16|bytes[22]<<8|bytes[23])>>>0;
       var sc=Math.min(270/w,46/h,1);media.push({bytes:bytes,row:row-1,w:Math.round(w*sc),h:Math.round(h*sc)});}
     sh+='<row r="'+row+'"'+(im?' ht="40" customHeight="1"':'')+'>'+
-      [r.folio,r.nombre||'',' ',r.telefono,fecha(r.fecha),hora(r.fecha)].map(function(v,ci){return cell(String.fromCharCode(65+ci)+row,v,2);}).join('')+'</row>';
+      [r.folio,r.nombre||(r.firma?'':'(omitido)'),' ',r.telefono||'(omitido)',fecha(r.fecha),hora(r.fecha),r.dispNombre||(SYNC?'':'Esta tableta')].map(function(v,ci){return cell(String.fromCharCode(65+ci)+row,v,2);}).join('')+'</row>';
   });
   sh+='</sheetData>'+(media.length?'<drawing r:id="rId1"/>':'')+'</worksheet>';
 
