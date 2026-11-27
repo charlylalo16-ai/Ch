@@ -65,6 +65,7 @@
   .cta:active{transform:scale(.97)}
   .cta .pen{font-size:1.2em}
   @keyframes breath{50%{box-shadow:0 18px 60px rgba(94,230,216,.6),inset 0 -4px 0 rgba(0,0,0,.08)}}
+  #social{display:none!important}
   .social{margin-top:18px;display:flex;align-items:center;gap:12px;font-size:18px;opacity:.95}
   .social b{font-size:30px;color:var(--aqua);font-variant-numeric:tabular-nums}
   .gear{position:fixed;right:16px;bottom:14px;z-index:5;width:46px;height:46px;border-radius:50%;
@@ -269,14 +270,14 @@
 </section>
 
 <!-- 2. Nombre -->
-<section class="screen" id="s-name">
+<section class="screen kb" id="s-name">
   <div class="topbar">
     <img class="mini" data-flyer alt="">
     <div class="steps"><div class="lbl">Paso 1 de 3 · Nombre</div><div class="bar"><i style="width:33%"></i></div></div>
     <button class="x" data-cancel type="button">✕ Cancelar</button>
   </div>
   <div class="q">Escribe tu nombre completo
-    <small id="nameHint">Con el lápiz, en cualquier parte del recuadro blanco ✍️</small></div>
+    <small id="nameHint">Escríbelo con el teclado</small></div>
   <div class="padwrap" id="padwrap">
     <canvas id="pad"></canvas>
     <div class="watermark">✍️ Escribe aquí<span>Nombre y apellidos</span></div>
@@ -288,7 +289,7 @@
   <div class="err" id="nameErr"></div>
   <div class="actions">
     <button class="btn ghost" id="clear" type="button">↺ Borrar</button>
-    <button class="btn ghost" id="toggleKb" type="button">⌨️ Teclado</button>
+    <button class="btn ghost" id="toggleKb" type="button">✍️ Lápiz</button>
     <button class="btn go" id="toPhone" type="button">Siguiente →</button>
   </div>
   <button class="skip" id="skipName" type="button">⏭ Omitir este paso</button>
@@ -450,7 +451,6 @@ function flush(){
   flushing=true;var it=outbox[0];
   return api('POST','api/registro',it).then(function(res){
     outbox=outbox.filter(function(o){return o.uid!==it.uid;});saveOutbox();flushing=false;setOnline(true);version='';
-    if(it.uid===waitUid&&current==='s-done')$('doneFolio').textContent='Registro #'+res.folio;
     return flush();
   },function(){flushing=false;setOnline(false);});
 }
@@ -496,10 +496,11 @@ function armIdle(){clearTimeout(idleT);idleT=setTimeout(function(){resetFlow();s
 ['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function(){if(current==='s-name'||current==='s-phone'||current==='s-rep')armIdle();},true);});
 
 function resetFlow(){busy=false;clearPad();$('nameInput').value='';phone='';drawDisplay();$('nameErr').textContent='';$('phoneErr').textContent='';
-  $('s-name').classList.remove('kb');kbMode=false;$('toggleKb').innerHTML='⌨️ Teclado';
-  $('nameHint').textContent='Con el lápiz, en cualquier parte del recuadro blanco ✍️';}
+  $('s-name').classList.add('kb');kbMode=true;$('toggleKb').innerHTML='✍️ Lápiz';
+  $('nameHint').textContent='Escríbelo con el teclado';}
 $('start').addEventListener('click',function(){
   resetFlow();show('s-name');
+  setTimeout(function(){if(current==='s-name'&&kbMode)$('nameInput').focus();},80);
   try{var el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)el.requestFullscreen().catch(function(){});}catch(e){}
 });
 document.querySelectorAll('[data-cancel]').forEach(function(b){b.addEventListener('click',function(){resetFlow();show('s-welcome');});});
@@ -565,7 +566,7 @@ function exportInk(){ // PNG recortado y reducido
 }
 
 /* ================= Teclado opcional ================= */
-var kbMode=false;
+var kbMode=true;
 $('toggleKb').addEventListener('click',function(){
   kbMode=!kbMode;$('s-name').classList.toggle('kb',kbMode);$('nameErr').textContent='';
   $('toggleKb').innerHTML=kbMode?'✍️ Lápiz':'⌨️ Teclado';
@@ -643,14 +644,12 @@ function finish(){
   if(SYNC){
     var uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
     outbox.push({uid:uid,nombre:pending.nombre,telefono:phone,fecha:iso,img:pending.img,disp:DEV,tipo:DEVTIPO,representante:repAns});saveOutbox();waitUid=uid;
-    folioTxt='Guardando…';
-    setTimeout(function(){if(current==='s-done'&&waitUid===uid&&outbox.some(function(o){return o.uid===uid;}))
-      $('doneFolio').textContent='✓ Guardado · se enviará a la laptop';},2000);
+    folioTxt='✓ Registrado';
   }else{
     var folio=(data.length?Math.max.apply(null,data.map(function(r){return r.folio;})):0)+1;
     data.push({folio:folio,nombre:pending.nombre,telefono:phone,fecha:iso,firma:!!pending.img,representante:repAns});save();
     if(pending.img)putImg(folio,pending.img);
-    folioTxt='Registro #'+folio;
+    folioTxt='✓ Registrado';
   }
   refreshCount();
   $('doneTitle').textContent=pending.nombre?'¡Gracias, '+pending.nombre.split(' ')[0]+'!':'¡Gracias!';
