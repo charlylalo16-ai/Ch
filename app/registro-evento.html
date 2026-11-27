@@ -422,7 +422,7 @@ function show(id){
 function armIdle(){clearTimeout(idleT);idleT=setTimeout(function(){resetFlow();show('s-welcome');},IDLE_MS);}
 ['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function(){if(current==='s-name'||current==='s-phone')armIdle();},true);});
 
-function resetFlow(){clearPad();$('nameInput').value='';phone='';drawDisplay();$('nameErr').textContent='';$('phoneErr').textContent='';
+function resetFlow(){busy=false;clearPad();$('nameInput').value='';phone='';drawDisplay();$('nameErr').textContent='';$('phoneErr').textContent='';
   $('s-name').classList.remove('kb');kbMode=false;$('toggleKb').innerHTML='⌨️ Teclado';
   $('nameHint').textContent='Con el lápiz, en cualquier parte del recuadro blanco ✍️';}
 $('start').addEventListener('click',function(){
@@ -541,10 +541,12 @@ function drawDisplay(){
 }
 drawDisplay();
 
+var busy=false;
 $('submit').addEventListener('click',function(){
+  if(busy||current!=='s-phone')return;
   if(phone.length!==10)return fail('phoneErr','El teléfono debe tener 10 dígitos.');
   var dup=allRecs().filter(function(r){return r.telefono===phone;})[0];
-  var go=function(){finish();};
+  var go=function(){if(busy||current!=='s-phone')return;busy=true;finish();};
   if(dup){ask({title:'Este número ya está registrado',text:'¿Quieres registrarte de nuevo con el mismo teléfono?',yes:'Sí, registrar',no:'Cancelar'}).then(function(ok){if(ok)go();});}
   else go();
 });
@@ -721,7 +723,9 @@ function zip(files){
 }
 
 if(SYNC){loadOutbox();$('net').hidden=false;$('aNet').hidden=false;setOnline(false);tick();setInterval(tick,2500);
-  window.addEventListener('online',tick);}
+  window.addEventListener('online',tick);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)tick();});
+  window.addEventListener('focus',tick);}
 else{load();refreshCount();openIDB();}
 if(location.hash==='#panel')setTimeout(function(){$('openAdmin').click();},300);
 })();

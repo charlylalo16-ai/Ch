@@ -69,9 +69,32 @@ func guardar() {
 	b, _ := json.MarshalIndent(map[string]any{"registros": registros}, "", " ")
 	tmp := archivoDB + ".tmp"
 	if os.WriteFile(tmp, b, 0o644) == nil {
-		os.Remove(archivoDB)
-		os.Rename(tmp, archivoDB)
+		os.Rename(tmp, archivoDB) // en Windows reemplaza el archivo existente
 	}
+	// Respaldo extra: CSV que se abre directo en Excel
+	var sb strings.Builder
+	sb.WriteString("\ufeffFolio,Nombre,Nombre escrito a mano,Telefono,Fecha y hora\r\n")
+	for _, r := range registros {
+		escrito := ""
+		if r.Firma {
+			escrito = "imagenes\\" + strconv.Itoa(r.Folio) + ".png"
+		}
+		fecha := r.Fecha
+		if t, err := time.Parse(time.RFC3339Nano, r.Fecha); err == nil {
+			fecha = t.Local().Format("02/01/2006 15:04")
+		}
+		fmt.Fprintf(&sb, "%d,%s,%s,%s,%s\r\n", r.Folio, csvCampo(r.Nombre), escrito, csvCampo("=\""+r.Telefono+"\""), fecha)
+	}
+	tmpc := filepath.Join(dirDatos, "registros.csv.tmp")
+	if os.WriteFile(tmpc, []byte(sb.String()), 0o644) == nil {
+		if os.Rename(tmpc, filepath.Join(dirDatos, "registros.csv")) != nil {
+			os.Remove(tmpc) // si Excel tiene el CSV abierto, se actualiza la proxima vez
+		}
+	}
+}
+
+func csvCampo(s string) string {
+	return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
 }
 
 func responderJSON(w http.ResponseWriter, code int, v any) {
