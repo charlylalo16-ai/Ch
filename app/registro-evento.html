@@ -679,8 +679,15 @@ $('btnWipe').addEventListener('click',function(){
 $('btnFull').addEventListener('click',function(){var el=document.documentElement;
   try{if(document.fullscreenElement)document.exitFullscreen();else (el.requestFullscreen||el.webkitRequestFullscreen).call(el);}catch(e){}});
 $('btnExcel').addEventListener('click',function(){
-  if(!data.length){ask({title:'Sin registros',text:'Todavía no hay registros.',yes:'OK',no:'Cerrar'});return;}
-  if(SYNC&&!online){ask({title:'Sin conexión',text:'Descarga el Excel desde la laptop, o espera a que vuelva la conexión.',yes:'OK',no:'Cerrar'});return;}
+  if(!allRecs().length){ask({title:'Sin registros',text:'Todavía no hay registros.',yes:'OK',no:'Cerrar'});return;}
+  if(SYNC&&!online){
+    if(!outbox.length){ask({title:'Sin conexión',text:'Descarga el Excel desde la laptop, o espera a que vuelva la conexión.',yes:'OK',no:'Cerrar'});return;}
+    ask({title:'Sin conexión con la laptop',text:'Esta tableta tiene '+outbox.length+' registro(s) pendientes de enviar.\n¿Descargarlos en un Excel aparte como respaldo?',yes:'Descargar',no:'Cancelar'}).then(function(ok){
+      if(!ok)return;var imgs={},recs=outbox.map(function(o,i){var f='P'+(i+1);if(o.img)imgs[f]=o.img;
+        return {folio:f,nombre:o.nombre,telefono:o.telefono,fecha:o.fecha,firma:!!o.img,dispNombre:'Pendiente (sin enviar)'};});
+      var n=new Date();descargar(buildXlsx(recs,imgs),'Pendientes_Tableta_'+pad2(n.getHours())+pad2(n.getMinutes())+'.xlsx');});
+    return;
+  }
   (SYNC?serverImgs():allImgs()).then(function(m){var n=new Date();
     descargar(buildXlsx(data,m),'Registro_Evento_28Nov_'+pad2(n.getHours())+pad2(n.getMinutes())+'.xlsx');});
 });
