@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0b2a8a">
+<title>Registro de Asistentes</title>
+<style>
+  :root{
+    --azul:#0b2a8a; --azul2:#1747c9; --azul3:#061a5c;
+    --aqua:#5ee6d8; --rojo:#e5484d; --verde:#16a34a;
+    --tinta:#0a1a4a; --gris:#5a6a95; --borde:#c9d5f5; --campo:#f7f9ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(circle at 15% 0%,#1d4fd8 0%,var(--azul) 45%,var(--azul3) 100%) fixed;
+    color:#fff;min-height:100vh;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:22px 16px 30px}
+  header{text-align:center;margin-bottom:20px}
+  .kicker{letter-spacing:.14em;text-transform:uppercase;font-size:14px;font-weight:700;opacity:.9}
+  h1{margin:6px 0 6px;font-size:clamp(26px,5vw,46px);line-height:1.02;font-weight:900;
+     text-transform:uppercase;font-style:italic;color:var(--aqua)}
+  .meta{font-size:clamp(14px,2.3vw,19px);font-weight:600;opacity:.95}
+  .meta span{white-space:nowrap}
+
+  .card{background:#fff;color:var(--tinta);border-radius:24px;padding:26px 24px;
+        box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .card h2{margin:0 0 6px;font-size:clamp(24px,3.6vw,32px);color:var(--azul)}
+  .card .sub{margin:0 0 10px;color:var(--gris);font-size:17px}
+  label{display:block;font-weight:800;font-size:21px;margin:18px 0 8px}
+  input{width:100%;font-size:30px;padding:16px 18px;border:3px solid var(--borde);border-radius:14px;
+        outline:none;color:var(--tinta);background:var(--campo);font-family:inherit}
+  input:focus{border-color:var(--azul2);background:#fff}
+  input.bad{border-color:var(--rojo)}
+  .err{color:var(--rojo);font-weight:800;font-size:18px;min-height:26px;margin-top:12px}
+  button{font:inherit;cursor:pointer;border:0;border-radius:16px}
+  .btn-main{width:100%;margin-top:10px;padding:22px;font-size:clamp(24px,4vw,32px);font-weight:900;
+            background:linear-gradient(90deg,var(--azul2),var(--azul));color:#fff;text-transform:uppercase;
+            letter-spacing:.03em;box-shadow:0 8px 20px rgba(23,71,201,.35)}
+  .btn-main:active{transform:scale(.98)}
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:17px;gap:10px}
+  .count b{font-size:22px;color:var(--aqua)}
+  .ghost{background:rgba(255,255,255,.14);color:#fff;padding:10px 16px;font-size:16px;font-weight:700}
+
+  .warn{display:none;background:#fff3cd;color:#5c4200;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-size:16px;font-weight:600}
+  .warn.show{display:block}
+  .warn code{background:#fff;padding:2px 6px;border-radius:6px;word-break:break-all}
+
+  /* Pantalla de bienvenida */
+  .overlay{position:fixed;inset:0;background:rgba(6,26,92,.97);display:none;align-items:center;
+           justify-content:center;flex-direction:column;text-align:center;z-index:50;padding:20px}
+  .overlay.show{display:flex}
+  .check{width:150px;height:150px;border-radius:50%;background:var(--aqua);color:var(--azul);
+         font-size:96px;display:flex;align-items:center;justify-content:center;font-weight:900;
+         animation:pop .35s ease-out}
+  @keyframes pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+  .overlay h3{font-size:clamp(30px,6vw,52px);margin:24px 0 6px;font-weight:900}
+  .overlay p{font-size:clamp(20px,3.5vw,28px);margin:4px 0;opacity:.95}
+  .overlay .folio{margin-top:16px;font-size:22px;color:var(--aqua);font-weight:800}
+
+  /* Panel de control */
+  .admin{position:fixed;inset:0;background:#eef2fc;color:var(--tinta);z-index:60;display:none;flex-direction:column}
+  .admin.show{display:flex}
+  .admin-top{background:var(--azul);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .admin-top h2{margin:0;font-size:22px;flex:1;min-width:180px}
+  .big-count{font-size:40px;font-weight:900;color:var(--aqua);line-height:1}
+  .admin-actions{padding:14px 16px;display:flex;gap:10px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #d8e0f5}
+  .btn{padding:14px 18px;font-size:18px;font-weight:800}
+  .btn-x{background:var(--verde);color:#fff}
+  .btn-b{background:var(--azul2);color:#fff}
+  .btn-g{background:#e2e8f7;color:var(--tinta)}
+  .btn-r{background:#fde2e3;color:#b42328}
+  .admin-search{padding:12px 16px}
+  .admin-search input{font-size:20px;padding:12px 14px}
+  .table-wrap{flex:1;overflow:auto;padding:0 16px 20px}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;font-size:18px}
+  th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #e6ebf7}
+  th{background:#dfe7fb;font-size:15px;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0}
+  td.n{color:var(--gris);width:56px}
+  td.del button{background:none;color:#b42328;font-size:22px;padding:4px 10px}
+  .empty{text-align:center;color:var(--gris);padding:40px 10px;font-size:18px}
+  @media (max-width:560px){ th.h-hide,td.h-hide{display:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="warn" id="warn">
+    ⚠️ <b>Este navegador no está guardando los registros.</b> Si recargas, se perderán.<br>
+    Ábrelo en Chrome escribiendo en la barra: <code>file:///sdcard/Download/registro-evento.html</code>
+  </div>
+
+  <header>
+    <div class="kicker">Entrega del nombramiento · Coordinación de la</div>
+    <h1>Defensa de la Patria,<br>la Familia y la Libertad</h1>
+    <div class="meta"><span>Sábado 28 de noviembre</span> · <span>11:00 AM</span> · <span>Expocentro CECONEXPO, Morelia</span></div>
+  </header>
+
+  <form class="card" id="form" autocomplete="off" novalidate>
+    <h2>¡Bienvenido! Regístrate aquí 👋</h2>
+    <p class="sub">Escribe tus datos y toca el botón azul.</p>
+
+    <label for="nombre">Nombre completo</label>
+    <input id="nombre" name="nombre" type="text" autocapitalize="words" autocomplete="off"
+           spellcheck="false" placeholder="Ej. María López García" enterkeyhint="next">
+
+    <label for="tel">Teléfono (10 dígitos)</label>
+    <input id="tel" name="tel" type="tel" inputmode="numeric" autocomplete="off"
+           placeholder="Ej. 443 123 4567" maxlength="14" enterkeyhint="done">
+
+    <div class="err" id="err"></div>
+    <button class="btn-main" type="submit">Registrarme ✅</button>
+  </form>
+
+  <div class="foot">
+    <div class="count">Registrados: <b id="count">0</b></div>
+    <button class="ghost" id="openAdmin" type="button">⚙️ Control</button>
+  </div>
+</div>
+
+<!-- Bienvenida -->
+<div class="overlay" id="ok">
+  <div class="check">✓</div>
+  <h3 id="okName">¡Gracias!</h3>
+  <p>Tu registro quedó guardado.</p>
+  <p>¡Bienvenido al evento!</p>
+  <div class="folio" id="okFolio"></div>
+</div>
+
+<!-- Panel de control -->
+<div class="admin" id="admin">
+  <div class="admin-top">
+    <h2>Panel de control</h2>
+    <div><div class="big-count" id="aCount">0</div><div style="font-size:14px;opacity:.85">registrados</div></div>
+  </div>
+  <div class="admin-actions">
+    <button class="btn btn-x" id="btnExcel" type="button">📥 Descargar Excel</button>
+    <button class="btn btn-b" id="btnFull" type="button">⛶ Pantalla completa</button>
+    <button class="btn btn-g" id="btnClose" type="button">← Volver al registro</button>
+    <button class="btn btn-r" id="btnWipe" type="button">🗑 Borrar todo</button>
+  </div>
+  <div class="admin-search"><input id="q" type="search" placeholder="🔍 Buscar por nombre o teléfono"></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th class="h-hide">Hora</th><th></th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="empty">Todavía no hay registros.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var KEY = 'registro_evento_28nov_2026';
+  var PIN = '2811';                 // PIN para abrir el panel de control
+  var data = [];
+  var storageOK = true;
+
+  // ---------- Almacenamiento ----------
+  function load(){
+    try{
+      localStorage.setItem('__t','1'); localStorage.removeItem('__t');
+      var s = localStorage.getItem(KEY);
+      data = s ? JSON.parse(s) : [];
+      if(!Array.isArray(data)) data = [];
+    }catch(e){ storageOK = false; data = []; }
+    if(!storageOK) $('warn').classList.add('show');
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(data)); }
+    catch(e){ storageOK = false; $('warn').classList.add('show'); }
+  }
+
+  // ---------- Utilidades ----------
+  function $(id){ return document.getElementById(id); }
+  var minus = {de:1,del:1,la:1,las:1,los:1,y:1,e:1};
+  function limpiaNombre(s){
+    return s.replace(/\s+/g,' ').trim().toLowerCase().split(' ').map(function(w,i){
+      if(i>0 && minus[w]) return w;
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+  }
+  function soloDigitos(s){ return s.replace(/\D/g,''); }
+  function fmtTel(d){ return d.length===10 ? d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6) : d; }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function fecha(iso){ var d=new Date(iso); return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear(); }
+  function hora(iso){ var d=new Date(iso); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  function refreshCount(){ $('count').textContent = data.length; $('aCount').textContent = data.length; }
+
+  // ---------- Registro ----------
+  var tel = $('tel');
+  tel.addEventListener('input', function(){
+    var d = soloDigitos(tel.value).slice(0,10);
+    var f = d.length>6 ? d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6) : d.length>3 ? d.slice(0,3)+' '+d.slice(3) : d;
+    if(tel.value !== f) tel.value = f;
+    tel.classList.remove('bad'); $('err').textContent='';
+  });
+  $('nombre').addEventListener('input', function(){ this.classList.remove('bad'); $('err').textContent=''; });
+  $('nombre').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tel.focus(); } });
+
+  $('form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var nombre = limpiaNombre($('nombre').value);
+    var d = soloDigitos(tel.value);
+    if(nombre.length < 3 || nombre.indexOf(' ') === -1){
+      $('nombre').classList.add('bad'); $('err').textContent = 'Escribe tu nombre y apellido, por favor.'; $('nombre').focus(); return;
+    }
+    if(d.length !== 10){
+      tel.classList.add('bad'); $('err').textContent = 'El teléfono debe tener 10 dígitos.'; tel.focus(); return;
+    }
+    var dup = data.filter(function(r){ return r.telefono === d; })[0];
+    if(dup && !confirm('Este teléfono ya está registrado a nombre de:\n\n' + dup.nombre + '\n\n¿Registrar de todos modos?')) return;
+
+    var rec = { folio: (data.length ? Math.max.apply(null, data.map(function(r){return r.folio;})) : 0) + 1,
+                nombre: nombre, telefono: d, fecha: new Date().toISOString() };
+    data.push(rec); save(); refreshCount();
+
+    $('form').reset(); document.activeElement && document.activeElement.blur();
+    $('okName').textContent = '¡Gracias, ' + nombre.split(' ')[0] + '!';
+    $('okFolio').textContent = 'Registro #' + rec.folio;
+    $('ok').classList.add('show');
+    setTimeout(function(){ $('ok').classList.remove('show'); }, 2600);
+  });
+  $('ok').addEventListener('click', function(){ $('ok').classList.remove('show'); });
+
+  // ---------- Panel de control ----------
+  $('openAdmin').addEventListener('click', function(){
+    var p = prompt('PIN del panel de control:');
+    if(p === null) return;
+    if(p.trim() !== PIN){ alert('PIN incorrecto'); return; }
+    $('q').value=''; render(); $('admin').classList.add('show');
+  });
+  $('btnClose').addEventListener('click', function(){ $('admin').classList.remove('show'); });
+  $('q').addEventListener('input', render);
+
+  function render(){
+    var q = $('q').value.trim().toLowerCase(), qd = soloDigitos(q);
+    var rows = data.slice().reverse().filter(function(r){
+      if(!q) return true;
+      return r.nombre.toLowerCase().indexOf(q) !== -1 || (qd && r.telefono.indexOf(qd) !== -1);
+    });
+    $('tbody').innerHTML = rows.map(function(r){
+      return '<tr><td class="n">'+r.folio+'</td><td>'+esc(r.nombre)+'</td><td>'+fmtTel(r.telefono)+
+             '</td><td class="h-hide">'+hora(r.fecha)+'</td><td class="del"><button type="button" data-f="'+r.folio+'" aria-label="Borrar">✕</button></td></tr>';
+    }).join('');
+    $('empty').style.display = rows.length ? 'none' : 'block';
+    $('empty').textContent = data.length ? 'Sin resultados.' : 'Todavía no hay registros.';
+    refreshCount();
+  }
+  $('tbody').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-f]'); if(!b) return;
+    var f = +b.getAttribute('data-f');
+    var r = data.filter(function(x){return x.folio===f;})[0]; if(!r) return;
+    if(!confirm('¿Borrar el registro #'+f+' de '+r.nombre+'?')) return;
+    data = data.filter(function(x){return x.folio!==f;}); save(); render();
+  });
+  $('btnWipe').addEventListener('click', function(){
+    if(!data.length) return;
+    var t = prompt('Esto borra los '+data.length+' registros.\nDescarga el Excel antes.\n\nEscribe BORRAR para confirmar:');
+    if(t && t.trim().toUpperCase()==='BORRAR'){ data=[]; save(); render(); }
+  });
+  $('btnFull').addEventListener('click', function(){
+    var el = document.documentElement;
+    try{
+      if(document.fullscreenElement) document.exitFullscreen();
+      else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+    }catch(e){}
+  });
+  $('btnExcel').addEventListener('click', function(){
+    if(!data.length){ alert('No hay registros todavía.'); return; }
+    var rows = [['#','Nombre','Teléfono','Fecha','Hora']].concat(data.map(function(r){
+      return [r.folio, r.nombre, r.telefono, fecha(r.fecha), hora(r.fecha)];
+    }));
+    var n = new Date();
+    descargar(xlsx(rows), 'Registro_Evento_28Nov_' + pad(n.getHours()) + pad(n.getMinutes()) + '.xlsx');
+  });
+
+  function descargar(blob, nombre){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+
+  // ---------- Generador de Excel (.xlsx) sin internet ----------
+  function x(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function xlsx(rows){
+    var H = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    var NS = 'http://schemas.openxmlformats.org/';
+    var sheet = H + '<worksheet xmlns="'+NS+'spreadsheetml/2006/main">' +
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+      '<cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="2" width="42" customWidth="1"/>' +
+      '<col min="3" max="3" width="15" customWidth="1"/><col min="4" max="4" width="13" customWidth="1"/><col min="5" max="5" width="9" customWidth="1"/></cols><sheetData>';
+    rows.forEach(function(r, ri){
+      sheet += '<row r="'+(ri+1)+'">';
+      r.forEach(function(v, ci){
+        var ref = String.fromCharCode(65+ci) + (ri+1), s = ri===0 ? ' s="1"' : '';
+        if(typeof v === 'number') sheet += '<c r="'+ref+'"'+s+'><v>'+v+'</v></c>';
+        else sheet += '<c r="'+ref+'" t="inlineStr"'+s+'><is><t xml:space="preserve">'+x(v)+'</t></is></c>';
+      });
+      sheet += '</row>';
+    });
+    sheet += '</sheetData></worksheet>';
+
+    var files = [
+      ['[Content_Types].xml', H+'<Types xmlns="'+NS+'package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+      ['_rels/.rels', H+'<Relationships xmlns="'+NS+'package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="'+NS+'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', H+'<workbook xmlns="'+NS+'spreadsheetml/2006/main" xmlns:r="'+NS+'officeDocument/2006/relationships">' +
+        '<sheets><sheet name="Registro" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', H+'<Relationships xmlns="'+NS+'package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="'+NS+'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+        '<Relationship Id="rId2" Type="'+NS+'officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', H+'<styleSheet xmlns="'+NS+'spreadsheetml/2006/main">' +
+        '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>' +
+        '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FF1747C9"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+        '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+        '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+        '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+        '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>' +
+        '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'],
+      ['xl/worksheets/sheet1.xml', sheet]
+    ];
+    return zip(files);
+  }
+
+  var CRC = (function(){ var t=[],c; for(var n=0;n<256;n++){ c=n; for(var k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
+  function crc32(b){ var c=0xFFFFFFFF; for(var i=0;i<b.length;i++) c = CRC[(c^b[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+
+  function zip(files){
+    var enc = new TextEncoder(), parts = [], central = [], off = 0;
+    files.forEach(function(f){
+      var nb = enc.encode(f[0]), d = enc.encode(f[1]), crc = crc32(d);
+      var h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true);
+      h.setUint16(8,0,true); h.setUint16(10,0,true); h.setUint16(12,0x21,true);
+      h.setUint32(14,crc,true); h.setUint32(18,d.length,true); h.setUint32(22,d.length,true);
+      h.setUint16(26,nb.length,true); h.setUint16(28,0,true);
+      parts.push(new Uint8Array(h.buffer), nb, d);
+      var c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true);
+      c.setUint16(10,0,true); c.setUint16(12,0,true); c.setUint16(14,0x21,true);
+      c.setUint32(16,crc,true); c.setUint32(20,d.length,true); c.setUint32(24,d.length,true);
+      c.setUint16(28,nb.length,true); c.setUint32(42,off,true);
+      central.push(new Uint8Array(c.buffer), nb);
+      off += 30 + nb.length + d.length;
+    });
+    var size = central.reduce(function(a,b){ return a+b.length; }, 0);
+    var e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true);
+    e.setUint32(12,size,true); e.setUint32(16,off,true);
+    return new Blob(parts.concat(central,[new Uint8Array(e.buffer)]), {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  }
+
+  // Evita cerrar la página por accidente
+  window.addEventListener('beforeunload', function(e){ if(data.length && !storageOK){ e.preventDefault(); e.returnValue=''; } });
+
+  load(); refreshCount();
+})();
+</script>
+</body>
+</html>
