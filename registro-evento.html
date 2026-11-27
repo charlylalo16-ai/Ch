@@ -408,7 +408,7 @@ document.body.classList.add('home');
 (function(){
   var h=document.getElementById('heroTitle');if(!h)return;
   if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  var TECLA=75, PAUSA=500, ESPACIO_VACIO=250;
+  var TECLA=150, PAUSA=3000, ESPACIO_VACIO=500;
   function armar(texto,padre){texto.split(' ').forEach(function(w,i){
     if(i)padre.appendChild(document.createTextNode(' '));
     var ws=document.createElement('span');ws.className='w';
