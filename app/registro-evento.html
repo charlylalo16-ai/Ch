@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#061a5c">
 <title>Registro de Asistentes</title>
 <style>
@@ -22,7 +22,8 @@
   /* ---------- Fondo animado ---------- */
   .bg{position:fixed;inset:0;z-index:0;overflow:hidden;
       background:linear-gradient(160deg,var(--n3) 0%,var(--n2) 45%,var(--n1) 100%)}
-  .blob{position:absolute;border-radius:50%;opacity:.55;will-change:transform}
+  .blob{position:absolute;border-radius:50%;opacity:.55}
+  body:not(.home) .blob{animation-play-state:paused}
   .blob.a{width:70vmax;height:70vmax;left:-25vmax;top:-30vmax;
           background:radial-gradient(circle,rgba(47,107,255,.75) 0%,rgba(47,107,255,0) 65%);animation:fa 18s ease-in-out infinite alternate}
   .blob.b{width:60vmax;height:60vmax;right:-25vmax;bottom:-30vmax;
@@ -33,11 +34,10 @@
   @keyframes fb{to{transform:translate(-10vmax,-8vmax) scale(1.15)}}
 
   /* ---------- Pantallas ---------- */
-  .screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;
+  .screen{position:fixed;top:0;left:0;right:0;height:var(--vvh,100%);z-index:1;display:flex;flex-direction:column;
           padding:max(18px,env(safe-area-inset-top)) 22px max(18px,env(safe-area-inset-bottom));
-          opacity:0;pointer-events:none;transform:translateY(16px) scale(.985);
-          transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
-  .screen.on{opacity:1;pointer-events:auto;transform:none}
+          visibility:hidden;opacity:0;pointer-events:none;transform:translateY(10px)}
+  .screen.on{visibility:visible;opacity:1;pointer-events:auto;transform:none;transition:opacity .18s ease,transform .22s ease}
 
   /* ---------- Bienvenida ---------- */
   #s-welcome{justify-content:center}
@@ -104,7 +104,14 @@
                 color:var(--tinta);background:#f6f8ff;font-family:inherit;font-weight:700}
   .kbmode input:focus{border-color:var(--b1);background:#fff}
   .kbmode p{color:var(--gris);font-size:17px;margin:12px 4px 0}
-  #s-name.kb .padwrap{display:none} #s-name.kb .kbmode{display:flex}
+  #s-name.kb .padwrap{display:none} #s-name.kb .kbmode{display:flex;flex:0 0 auto;justify-content:flex-start;padding:18px}
+  #s-name.kb .q small{display:none}
+  @media (max-height:560px){
+    #s-name.kb .mini,#s-name.kb .kbmode p,#s-name.kb .skip{display:none}
+    #s-name.kb .topbar{margin-bottom:6px} #s-name.kb .q{font-size:24px;margin:0 0 8px}
+    #s-name.kb .kbmode{padding:10px} #s-name.kb .kbmode input{font-size:28px;padding:12px 16px}
+    #s-name.kb .actions{margin-top:8px} #s-name.kb .btn{padding:12px 16px;font-size:18px}
+  }
 
   .actions{display:flex;gap:12px;margin-top:14px}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:20px 22px;border-radius:20px;
@@ -160,7 +167,7 @@
   @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
 
   /* ---------- Modal ---------- */
-  .modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(3,15,61,.7);backdrop-filter:blur(6px)}
+  .modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(3,15,61,.82)}
   .modal.show{display:flex}
   .dlg{width:min(520px,100%);background:#fff;color:var(--tinta);border-radius:24px;padding:28px;box-shadow:0 30px 80px rgba(0,0,0,.5);animation:pop .3s ease-out}
   .dlg h3{margin:0 0 10px;font-size:26px}
@@ -350,6 +357,11 @@ var minus={de:1,del:1,la:1,las:1,los:1,y:1,e:1};
 function limpiaNombre(s){return s.replace(/\s+/g,' ').trim().toLowerCase().split(' ').map(function(w,i){
   return (i>0&&minus[w])?w:w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');}
 
+// Ajusta la pantalla al espacio visible cuando aparece el teclado
+(function(){var vv=window.visualViewport;if(!vv)return;
+  function fit(){document.documentElement.style.setProperty('--vvh',Math.round(vv.height)+'px');}
+  vv.addEventListener('resize',fit);fit();})();
+document.body.classList.add('home');
 document.querySelectorAll('[data-flyer]').forEach(function(i){i.src=$('flyer').src;});
 
 /* ================= Almacenamiento ================= */
@@ -441,7 +453,7 @@ function refreshCount(){var n=allRecs().length;$('count').textContent=n;$('aCoun
 var current='s-welcome', idleT=null;
 function show(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id===id);});
-  current=id; $('openAdmin').style.display=id==='s-welcome'?'':'none';
+  current=id; document.body.classList.toggle('home',id==='s-welcome'); $('openAdmin').style.display=id==='s-welcome'?'':'none';
   clearTimeout(idleT); if(id==='s-name'||id==='s-phone')armIdle();
   if(id==='s-name')setTimeout(sizePad,60);
 }
